@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "camera-viewer",
+  "name": "Cámaras",
+  "version": "1.0.0",
+  "publisher": "NOPAL Labs",
+  "category": "Producción",
+  "description": "Agrega cámaras por URL de stream MJPEG, ONVIF o webcam USB, y míralas en vivo desde el panel.",
+  "permissions": ["Guardar direcciones de cámaras", "Detectar webcams USB"],
+  "compatibility": ["Impresión 3D", "Láser", "CNC"],
+  "frontend": {
+    "script": "frontend/camera-viewer.js",
+    "style": "frontend/camera-viewer.css",
+    "section": "camera-viewer"
+  },
+  "backend": {
+    "entry": "backend/router.py"
+  }
+}
