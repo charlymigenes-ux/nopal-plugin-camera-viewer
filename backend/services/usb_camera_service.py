@@ -57,6 +57,30 @@ VIDIOC_QUERYCAP = _ioc(_IOC_READ, "V", 0, _V4L2_CAP_STRUCT_SIZE)
 V4L2_CAP_VIDEO_CAPTURE = 0x00000001
 V4L2_CAP_DEVICE_CAPS = 0x80000000
 
+# ── VIDIOC_QUERYCTRL / VIDIOC_G_CTRL / VIDIOC_S_CTRL -- control de enfoque
+# manual (V4L2_CID_FOCUS_ABSOLUTE) para webcams UVC que lo soportan. Mismo
+# criterio que VIDIOC_QUERYCAP arriba: números de ioctl calculados con la
+# fórmula del kernel, no copiados a mano de otro lado. ──
+_IOC_WRITE = 1
+_IOC_READWRITE = _IOC_READ | _IOC_WRITE
+
+# struct v4l2_control (linux/videodev2.h): u32 id; s32 value; -- 8 bytes.
+_V4L2_CONTROL_STRUCT_FMT = "=Ii"
+_V4L2_CONTROL_STRUCT_SIZE = struct.calcsize(_V4L2_CONTROL_STRUCT_FMT)
+
+# struct v4l2_queryctrl: u32 id; u32 type; u8 name[32]; s32 minimum; s32
+# maximum; s32 step; s32 default_value; u32 flags; u32 reserved[2] -- 68 bytes.
+_V4L2_QUERYCTRL_STRUCT_FMT = "=II32siiiiIII"
+_V4L2_QUERYCTRL_STRUCT_SIZE = struct.calcsize(_V4L2_QUERYCTRL_STRUCT_FMT)
+
+VIDIOC_QUERYCTRL = _ioc(_IOC_READWRITE, "V", 36, _V4L2_QUERYCTRL_STRUCT_SIZE)
+VIDIOC_G_CTRL = _ioc(_IOC_READWRITE, "V", 27, _V4L2_CONTROL_STRUCT_SIZE)
+VIDIOC_S_CTRL = _ioc(_IOC_READWRITE, "V", 28, _V4L2_CONTROL_STRUCT_SIZE)
+
+# linux/v4l2-controls.h: V4L2_CID_CAMERA_CLASS_BASE + 10 = 0x009a0900 + 10.
+V4L2_CID_FOCUS_ABSOLUTE = 0x009A090A
+V4L2_CTRL_FLAG_DISABLED = 0x0001
+
 
 def _query_v4l2_capability(device_path: str) -> Optional[Dict[str, Any]]:
     """None si no se pudo abrir/consultar (permiso denegado, no es un nodo
@@ -138,6 +162,57 @@ def list_usb_video_devices() -> List[Dict[str, Any]]:
             "product_id": identity["product_id"],
         })
     return devices
+
+
+def get_focus_control(device_path: str) -> Optional[Dict[str, int]]:
+    """Rango de foco manual (V4L2_CID_FOCUS_ABSOLUTE) si la cámara lo
+    soporta -- None si el control no existe o viene deshabilitado (la
+    mayoría de las webcams UVC de foco fijo caen acá; no es un error, la UI
+    simplemente no muestra el control de enfoque para esa cámara)."""
+    try:
+        fd = os.open(device_path, os.O_RDWR | os.O_NONBLOCK)
+    except OSError as e:
+        logger.debug(f"No se pudo abrir {device_path} para consultar el foco: {e}")
+        return None
+    try:
+        query_buf = bytearray(_V4L2_QUERYCTRL_STRUCT_SIZE)
+        struct.pack_into("=I", query_buf, 0, V4L2_CID_FOCUS_ABSOLUTE)
+        fcntl.ioctl(fd, VIDIOC_QUERYCTRL, query_buf)
+        _id, _type, _name, minimum, maximum, step, default_value, flags, _r0, _r1 = struct.unpack(
+            _V4L2_QUERYCTRL_STRUCT_FMT, bytes(query_buf)
+        )
+        if flags & V4L2_CTRL_FLAG_DISABLED:
+            return None
+
+        control_buf = bytearray(_V4L2_CONTROL_STRUCT_SIZE)
+        struct.pack_into("=I", control_buf, 0, V4L2_CID_FOCUS_ABSOLUTE)
+        fcntl.ioctl(fd, VIDIOC_G_CTRL, control_buf)
+        _cid, current = struct.unpack(_V4L2_CONTROL_STRUCT_FMT, bytes(control_buf))
+
+        return {"minimum": minimum, "maximum": maximum, "step": step or 1, "default": default_value, "current": current}
+    except OSError as e:
+        logger.debug(f"{device_path} no soporta control de enfoque manual: {e}")
+        return None
+    finally:
+        os.close(fd)
+
+
+def set_focus(device_path: str, value: int) -> bool:
+    try:
+        fd = os.open(device_path, os.O_RDWR | os.O_NONBLOCK)
+    except OSError as e:
+        logger.debug(f"No se pudo abrir {device_path} para setear el foco: {e}")
+        return False
+    try:
+        control_buf = bytearray(_V4L2_CONTROL_STRUCT_SIZE)
+        struct.pack_into(_V4L2_CONTROL_STRUCT_FMT, control_buf, 0, V4L2_CID_FOCUS_ABSOLUTE, int(value))
+        fcntl.ioctl(fd, VIDIOC_S_CTRL, control_buf)
+        return True
+    except OSError as e:
+        logger.debug(f"No se pudo setear el foco en {device_path}: {e}")
+        return False
+    finally:
+        os.close(fd)
 
 
 # ── Streaming: un proceso ffmpeg por cámara activa, repartido a N suscriptores ──

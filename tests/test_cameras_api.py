@@ -112,6 +112,66 @@ class TestCameraRemove:
         assert not any(c["id"] == created["id"] for c in client.get("/api/cameras").json()["cameras"])
 
 
+class TestCameraUpdate:
+    def test_update_requires_admin(self, client, as_operator):
+        response = client.post("/api/cameras/whatever/update", data={"name": "X"})
+        assert response.status_code == 403
+
+    def test_update_unknown_returns_404(self, client, as_admin):
+        response = client.post("/api/cameras/does-not-exist/update", data={"name": "X"})
+        assert response.status_code == 404
+
+    def test_update_rejects_empty_name(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Temp", "stream_url": "http://192.168.1.70:8080/stream"}).json()
+        response = client.post(f"/api/cameras/{created['id']}/update", data={"name": "   "})
+        assert response.status_code == 400
+
+    def test_rename_persists(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Vieja", "stream_url": "http://192.168.1.70:8080/stream"}).json()
+        response = client.post(f"/api/cameras/{created['id']}/update", data={"name": "Nueva"})
+        assert response.status_code == 200
+        assert response.json()["name"] == "Nueva"
+        listed = client.get("/api/cameras").json()["cameras"]
+        assert next(c for c in listed if c["id"] == created["id"])["name"] == "Nueva"
+
+    def test_url_camera_can_be_bound_to_a_device(self, client, as_admin):
+        # Antes esto solo funcionaba para cámaras USB -- ya no aplica, ver
+        # openEditPanel() en camera-viewer.js.
+        created = client.post("/api/cameras", data={"name": "IP Cam", "stream_url": "http://192.168.1.70:8080/stream"}).json()
+        response = client.post(f"/api/cameras/{created['id']}/update", data={
+            "name": "IP Cam", "purpose": "timelapse", "bound_device_type": "bambu", "bound_device_id": "SN1",
+        })
+        assert response.status_code == 200
+        body = response.json()
+        assert body["purpose"] == "timelapse"
+        assert body["bound_device"] == {"type": "bambu", "id": "SN1"}
+
+    def test_switch_from_timelapse_to_monitoring_clears_bound_device(self, client, as_admin, tmp_path):
+        fake_device = tmp_path / "video0"
+        fake_device.write_bytes(b"")
+        created = client.post("/api/cameras/usb/register", data={
+            "name": "Webcam", "device_path": str(fake_device),
+            "purpose": "timelapse", "bound_device_type": "bambu", "bound_device_id": "SN1",
+        }).json()
+        response = client.post(f"/api/cameras/{created['id']}/update", data={"name": "Webcam", "purpose": "monitoring"})
+        assert response.status_code == 200
+        body = response.json()
+        assert body["purpose"] == "monitoring"
+        assert body["bound_device"] is None
+
+    def test_switch_to_other_sets_note(self, client, as_admin, tmp_path):
+        fake_device = tmp_path / "video0"
+        fake_device.write_bytes(b"")
+        created = client.post("/api/cameras/usb/register", data={
+            "name": "Webcam", "device_path": str(fake_device), "purpose": "monitoring",
+        }).json()
+        response = client.post(f"/api/cameras/{created['id']}/update", data={
+            "name": "Webcam", "purpose": "other", "purpose_note": "Vigilar la puerta",
+        })
+        assert response.status_code == 200
+        assert response.json()["purpose_note"] == "Vigilar la puerta"
+
+
 class TestUsbDiscover:
     def test_discover_requires_auth(self, client, as_admin, monkeypatch):
         monkeypatch.setattr(cameras_api.usb_camera_service, "list_usb_video_devices", lambda: [

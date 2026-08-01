@@ -281,3 +281,305 @@
 @media (max-width: 600px) {
     .cv-grid { grid-template-columns: 1fr; }
 }
+
+/* Tarjeta completa (ver camera-card.js) montada dentro de la galería propia
+   del plugin -- sin fondo/borde propio acá, la tarjeta interna (.cam-card,
+   estilos en style.css de NOPAL core) ya trae los suyos; si se apilaran los
+   dos se vería una tarjeta adentro de otra tarjeta. El ícono de eliminar
+   queda en una franja aparte arriba, no superpuesto, para no competir con
+   el engranaje propio de la tarjeta completa. */
+.cv-card.cv-card-full {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    gap: 6px;
+}
+.cv-card-full-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.cv-camera-full-mount:empty {
+    display: none;
+}
+
+/* ── camera-card.js: tarjeta de cámara embebible en el panel de cualquier
+   máquina (modal de impresora, fila del dashboard, etc.) -- a diferencia de
+   .cv-* de arriba (que vive solo dentro de la sección propia del plugin),
+   esto se monta en pantallas de NOPAL core, así que usa las variables de
+   tema globales (--accent, --border, --card-bg...) directamente en vez de
+   los alias --cv-* (esos solo existen dentro de .cv-section). ── */
+
+.cam-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--card-bg);
+}
+
+.cam-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.cam-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--text);
+}
+
+.cam-card-title-row strong {
+    font-size: .88rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cam-status-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, .14);
+    color: #22c55e;
+    font-size: .68rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.cam-card.is-offline .cam-status-pill { background: rgba(239, 68, 68, .14); color: #ef4444; }
+.cam-card.is-offline .cam-status-pill .cam-status-text::before { content: "Desconectada"; }
+.cam-status-text::before { content: "En línea"; }
+.cam-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.cam-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.cam-icon-btn:hover { border-color: rgba(var(--accent-rgb), .5); color: var(--accent); }
+
+.cam-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: .74rem;
+    color: var(--text-muted);
+}
+.cam-card-meta strong { color: var(--text); font-weight: 600; }
+
+.cam-timelapse-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+}
+
+.cam-timelapse-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.cam-toggle { position: relative; display: inline-block; width: 34px; height: 19px; flex-shrink: 0; }
+.cam-toggle input { opacity: 0; width: 0; height: 0; }
+.cam-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.cam-toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    left: 2px;
+    top: 2px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .15s ease;
+}
+.cam-toggle input:checked + .cam-toggle-slider { background: var(--accent); }
+.cam-toggle input:checked + .cam-toggle-slider::before { transform: translateX(15px); }
+
+.cam-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+.cam-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--panel-bg, rgba(127, 127, 127, .08));
+}
+.cam-stat span { font-size: .64rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+.cam-stat strong { font-size: .8rem; color: var(--text); }
+
+.cam-actions-row { display: flex; gap: 8px; }
+.cam-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+    background: transparent;
+    color: var(--text);
+    font-size: .76rem;
+    cursor: pointer;
+}
+.cam-btn:hover { border-color: rgba(var(--accent-rgb), .5); }
+.cam-btn:disabled { opacity: .45; cursor: not-allowed; }
+.cam-btn-danger { color: #ef4444; border-color: rgba(239, 68, 68, .4); }
+.cam-btn-danger:hover { border-color: #ef4444; background: rgba(239, 68, 68, .1); }
+.cam-btn-accent { color: var(--accent); border-color: var(--accent); background: rgba(var(--accent-rgb), .12); }
+
+.cam-toggles-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.cam-mini-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: .68rem;
+    cursor: pointer;
+}
+.cam-mini-btn:hover { color: var(--text); }
+.cam-mini-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(var(--accent-rgb), .12); }
+
+.cam-focus-popover {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+    font-size: .74rem;
+    color: var(--text-muted);
+}
+.cam-focus-popover input[type="range"] { flex: 1; }
+
+.cam-live-section { display: flex; flex-direction: column; gap: 6px; }
+.cam-live-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+
+.cam-live-wrap {
+    position: relative;
+    border-radius: var(--radius-sm, 6px);
+    overflow: hidden;
+    background: #0b0f16;
+    aspect-ratio: 16 / 9;
+}
+.cam-live-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-card.is-offline .cam-live-img { visibility: hidden; }
+.cam-live-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, .85);
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+.cam-card.is-offline .cam-live-badge { display: none; }
+
+.cam-captures-section { display: flex; flex-direction: column; gap: 6px; }
+.cam-captures-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .74rem;
+    color: var(--text-muted);
+}
+.cam-see-all-btn {
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-size: .72rem;
+    cursor: pointer;
+}
+.cam-captures-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.cam-capture-thumb { aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: rgba(127, 127, 127, .12); }
+.cam-capture-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-empty { grid-column: 1 / -1; font-size: .74rem; color: var(--text-muted); margin: 0; }
+
+/* Miniatura compacta -- ver "Trabajos en curso" del dashboard */
+.cam-card-compact { padding: 0; border: none; background: transparent; }
+.cam-card-compact .cam-live-wrap { aspect-ratio: 4 / 3; border-radius: var(--radius-sm, 6px); }
+
+.cam-gallery-overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; }
+.cam-gallery-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .6); }
+.cam-gallery-dialog {
+    position: relative;
+    width: min(90vw, 900px);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: var(--radius-lg, 14px);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+.cam-gallery-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cam-gallery-header-actions { display: flex; align-items: center; gap: 8px; }
+.cam-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    overflow-y: auto;
+}
+.cam-gallery-thumb { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; display: block; }
+.cam-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-gallery-thumb span {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 3px 6px;
+    background: rgba(0, 0, 0, .6);
+    color: #fff;
+    font-size: .64rem;
+    text-align: center;
+}
+
+@media (max-width: 480px) {
+    .cam-stat-grid { grid-template-columns: repeat(3, 1fr); }
+    .cam-captures-grid { grid-template-columns: repeat(4, 1fr); }
+}

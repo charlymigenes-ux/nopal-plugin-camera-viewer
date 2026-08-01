@@ -113,6 +113,7 @@ def _load_router():
     _install_alias("backend.services.camera_service", sys.modules[f"{pkg_name}.services.camera_service"])
     _install_alias("backend.services.usb_camera_service", sys.modules[f"{pkg_name}.services.usb_camera_service"])
     _install_alias("backend.services.onvif_service", sys.modules[f"{pkg_name}.services.onvif_service"])
+    _install_alias("backend.services.timelapse_service", sys.modules[f"{pkg_name}.services.timelapse_service"])
     return module
 
 
@@ -156,6 +157,16 @@ def isolated_registries(tmp_path, monkeypatch):
     archivos reales del checkout donde se corran los tests."""
     camera_service = sys.modules["backend.services.camera_service"]
     monkeypatch.setattr(camera_service, "REGISTRY_PATH", str(tmp_path / "camera_registry.json"))
+    # CAPTURES_DIR es otro constante módulo-nivel respaldado por el
+    # filesystem real (fotogramas/grabaciones de timelapse) -- mismo
+    # criterio que REGISTRY_PATH arriba, ver CLAUDE.md de NOPAL core.
+    monkeypatch.setattr(camera_service, "CAPTURES_DIR", str(tmp_path / "camera_captures"))
+    timelapse_service = sys.modules["backend.services.timelapse_service"]
+    # Los buckets de tareas/estado en memoria del motor de timelapse también
+    # son módulo-nivel y persistirían entre tests si no se resetean acá.
+    monkeypatch.setattr(timelapse_service, "_timelapse_tasks", {})
+    monkeypatch.setattr(timelapse_service, "_recording_state", {})
+    monkeypatch.setattr(timelapse_service, "_recent_motion_events", {})
     yield tmp_path
 
 

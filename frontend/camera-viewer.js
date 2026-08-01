@@ -2,6 +2,19 @@
     const PLUGIN_ID = 'camera-viewer';
     if (window.NopalPluginRegistry?.[PLUGIN_ID]) return;
 
+    // camera-card.js es un componente aparte (la tarjeta de cámara que se
+    // monta en el panel de CUALQUIER máquina, no solo en esta sección, y
+    // también acá mismo para mostrar la tarjeta completa de cada cámara) --
+    // el manifiesto del plugin solo declara un script (ver
+    // nopal-plugin.json), así que se inyecta acá con el mismo mecanismo que
+    // usa loadPluginAsset() de NOPAL core para el script principal.
+    if (!window.NopalCameraCard && !document.getElementById('camera-card-script')) {
+        const cardScript = document.createElement('script');
+        cardScript.id = 'camera-card-script';
+        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js';
+        document.body.appendChild(cardScript);
+    }
+
     const state = {
         cameras: [],   // /api/cameras
         loading: false,
@@ -18,6 +31,22 @@
         boundType: '',
         boundId: '',
         boundOptions: [],   // impresoras/láser/CNC ya registrados, para "Timelapse de un dispositivo"
+        loadingBoundOptions: false,
+    };
+
+    // Estado del popup "Editar cámara" -- mismas piezas que usbState
+    // (propósito/dispositivo filmado) pero separado de ese objeto: son dos
+    // flujos independientes (alta vs. edición) que pueden coexistir en el
+    // DOM aunque no a la vez, y mezclarlos en un solo estado los acoplaría
+    // sin necesidad.
+    const editState = {
+        cameraId: null,
+        name: '',
+        purpose: 'monitoring',
+        boundType: '',
+        boundId: '',
+        note: '',
+        boundOptions: [],
         loadingBoundOptions: false,
     };
 
@@ -155,9 +184,11 @@
         renderUsbTab();
     }
 
-    async function loadBoundDeviceOptions() {
-        usbState.loadingBoundOptions = true;
-        renderUsbTab();
+    // `targetState` es usbState (alta) o editState (edición) -- misma lista
+    // de dispositivos filmables para ambos flujos, sin duplicar el fetch.
+    async function loadBoundDeviceOptions(targetState, onUpdate) {
+        targetState.loadingBoundOptions = true;
+        onUpdate();
         const options = [];
         await Promise.all(BOUND_DEVICE_SOURCES.map(async source => {
             try {
@@ -179,9 +210,9 @@
                 // tumbar el resto de la lista -- se omite en silencio.
             }
         }));
-        usbState.boundOptions = options;
-        usbState.loadingBoundOptions = false;
-        renderUsbTab();
+        targetState.boundOptions = options;
+        targetState.loadingBoundOptions = false;
+        onUpdate();
     }
 
     function selectUsbDevice(device) {
@@ -255,7 +286,7 @@
         detailEl.hidden = !usbState.selectedDevice;
         detailEl.innerHTML = renderUsbDetailHtml();
         if (usbState.purpose === 'timelapse' && !usbState.boundOptions.length && !usbState.loadingBoundOptions) {
-            loadBoundDeviceOptions();
+            loadBoundDeviceOptions(usbState, renderUsbTab);
         }
         updateUsbSubmitEnabled();
     }
@@ -287,6 +318,86 @@
         }
     }
 
+    // ── Popup "Editar cámara" (nombre + propósito, nunca la fuente del
+    // video: cambiar de dónde sale el stream es dar de alta una cámara
+    // nueva, no editar la existente) ────────────────────────────────────
+
+    function renderEditPurposeHtml() {
+        const boundSection = editState.purpose === 'timelapse' ? `
+            <label>
+                <span>¿Qué dispositivo vas a filmar?</span>
+                <select id="cv-edit-bound-select" ${editState.loadingBoundOptions ? 'disabled' : ''}>
+                    <option value="">${editState.loadingBoundOptions ? 'Cargando dispositivos…' : 'Elegí un dispositivo'}</option>
+                    ${editState.boundOptions.map(opt => `<option value="${esc(opt.type)}::${esc(opt.id)}" ${editState.boundType === opt.type && editState.boundId === opt.id ? 'selected' : ''}>${esc(opt.brandLabel)} — ${esc(opt.name)}</option>`).join('')}
+                </select>
+            </label>` : '';
+        const noteSection = editState.purpose === 'other' ? `
+            <label><span>¿Para qué la vas a usar?</span><input type="text" id="cv-edit-note-input" maxlength="140" value="${esc(editState.note)}" placeholder="Ej. vigilar el taller"></label>` : '';
+        return `
+            <div class="cv-usb-purpose">
+                <span>¿Para qué la vas a usar?</span>
+                <label class="cv-usb-radio"><input type="radio" name="cv-edit-purpose" value="monitoring" ${editState.purpose === 'monitoring' ? 'checked' : ''}><span>Monitoreo general</span></label>
+                <label class="cv-usb-radio"><input type="radio" name="cv-edit-purpose" value="timelapse" ${editState.purpose === 'timelapse' ? 'checked' : ''}><span>Timelapse de un dispositivo</span></label>
+                <label class="cv-usb-radio"><input type="radio" name="cv-edit-purpose" value="other" ${editState.purpose === 'other' ? 'checked' : ''}><span>Otra función</span></label>
+            </div>
+            ${boundSection}
+            ${noteSection}`;
+    }
+
+    function renderEditPanel() {
+        const nameInput = root.querySelector('#cv-edit-name-input');
+        if (nameInput && document.activeElement !== nameInput) nameInput.value = editState.name;
+        const purposeSection = root.querySelector('#cv-edit-purpose-section');
+        if (purposeSection) purposeSection.innerHTML = renderEditPurposeHtml();
+        if (editState.purpose === 'timelapse' && !editState.boundOptions.length && !editState.loadingBoundOptions) {
+            loadBoundDeviceOptions(editState, renderEditPanel);
+        }
+    }
+
+    function openEditPanel(camera) {
+        editState.cameraId = camera.id;
+        editState.name = camera.name;
+        editState.purpose = camera.purpose || 'monitoring';
+        editState.boundType = camera.bound_device?.type || '';
+        editState.boundId = camera.bound_device?.id || '';
+        editState.note = camera.purpose_note || '';
+        editState.boundOptions = [];
+        editState.loadingBoundOptions = false;
+        root.querySelector('#cv-edit-panel').hidden = false;
+        renderEditPanel();
+    }
+
+    function closeEditPanel() {
+        root.querySelector('#cv-edit-panel').hidden = true;
+    }
+
+    async function submitCameraEdit(event) {
+        event.preventDefault();
+        const name = root.querySelector('#cv-edit-name-input').value.trim();
+        if (!name) return;
+        const params = { name, purpose: editState.purpose };
+        if (editState.purpose === 'timelapse') {
+            params.bound_device_type = editState.boundType;
+            params.bound_device_id = editState.boundId;
+        }
+        if (editState.purpose === 'other') {
+            const noteInput = root.querySelector('#cv-edit-note-input');
+            params.purpose_note = (noteInput?.value || '').trim();
+        }
+        const submitBtn = root.querySelector('#cv-edit-submit-btn');
+        submitBtn.disabled = true;
+        try {
+            await api(`/api/cameras/${editState.cameraId}/update`, { method: 'POST', body: new URLSearchParams(params) });
+            closeEditPanel();
+            toast(`${name}: cámara actualizada.`);
+            await refreshAll();
+        } catch (error) {
+            toast(error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
     // ── Render ───────────────────────────────────────────────────────────
 
     function watchStream(img) {
@@ -308,6 +419,14 @@
         });
     }
 
+    // Cada cámara de la galería propia del plugin muestra la tarjeta
+    // completa (timelapse/grabación/enfoque/detección de movimiento/galería
+    // de capturas -- ver camera-card.js), no solo la vista en vivo chica que
+    // se usa cuando esta misma tarjeta se embebe en el panel de una máquina.
+    // El ícono de eliminar queda afuera del montaje (es gestión de la
+    // cámara en sí, no del timelapse), y el engranaje de dentro de la
+    // tarjeta completa abre el editor de nombre/propósito/vínculo de este
+    // mismo archivo en vez de "navegar" a esta sección (ya estamos acá).
     function renderGrid() {
         const grid = root.querySelector('#cv-grid');
         if (!state.cameras.length) {
@@ -315,17 +434,17 @@
             return;
         }
         grid.innerHTML = state.cameras.map(camera => `
-            <div class="cv-card" data-cv-camera="${camera.id}" title="Ver en grande">
-                <div class="cv-stream-wrap">
-                    <img class="cv-stream" src="${esc(camera.stream_url)}" alt="${esc(camera.name)}" loading="lazy">
-                    <span class="cv-stream-status">Sin señal · reintentando…</span>
-                </div>
-                <div class="cv-card-footer">
-                    <strong>${esc(camera.name)}</strong>
+            <div class="cv-card cv-card-full" data-cv-camera="${camera.id}">
+                <div class="cv-card-full-actions">
                     <button type="button" class="cv-icon-btn danger" data-cv-remove="${camera.id}" title="Eliminar">${icon(ICON_TRASH, 15)}</button>
                 </div>
+                <div class="cv-camera-full-mount" id="cv-full-mount-${camera.id}"></div>
             </div>`).join('');
-        grid.querySelectorAll('.cv-stream').forEach(watchStream);
+        if (!window.NopalCameraCard) return;
+        state.cameras.forEach(camera => {
+            const mountEl = grid.querySelector(`#cv-full-mount-${camera.id}`);
+            if (mountEl) window.NopalCameraCard.mount(mountEl, { cameraId: camera.id, compact: false, onSettingsClick: () => openEditPanel(camera) });
+        });
     }
 
     function render() {
@@ -426,6 +545,18 @@
                     </div>
                 </div>
 
+                <div class="cv-panel-overlay" id="cv-edit-panel" hidden>
+                    <div class="cv-panel-backdrop" data-cv-close-edit></div>
+                    <div class="cv-panel-dialog">
+                        <div class="cv-panel-header"><span><strong>Configurar cámara</strong></span><button type="button" data-cv-close-edit>${icon(ICON_CLOSE, 16)}</button></div>
+                        <form class="cv-add-form" id="cv-edit-form">
+                            <label><span>Nombre</span><input type="text" id="cv-edit-name-input" maxlength="60" required></label>
+                            <div id="cv-edit-purpose-section"></div>
+                            <div class="cv-panel-actions"><button type="button" data-cv-close-edit>Cancelar</button><button type="submit" class="cv-btn-accent" id="cv-edit-submit-btn">Guardar</button></div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="cv-panel-overlay" id="cv-lightbox" hidden>
                     <div class="cv-panel-backdrop" data-cv-close-lightbox></div>
                     <div class="cv-lightbox-dialog">
@@ -469,6 +600,20 @@
         usbForm.querySelector('#cv-add-usb-submit-btn').addEventListener('click', submitUsbRegistration);
         usbForm.querySelector('#cv-usb-rescan-btn').addEventListener('click', loadUsbDevices);
         root.querySelectorAll('[data-cv-close-lightbox]').forEach(el => el.addEventListener('click', closeLightbox));
+        root.querySelectorAll('[data-cv-close-edit]').forEach(el => el.addEventListener('click', closeEditPanel));
+        root.querySelector('#cv-edit-form').addEventListener('submit', submitCameraEdit);
+        root.querySelector('#cv-edit-purpose-section').addEventListener('change', event => {
+            if (event.target.name === 'cv-edit-purpose') {
+                editState.purpose = event.target.value;
+                renderEditPanel();
+                return;
+            }
+            if (event.target.id === 'cv-edit-bound-select') {
+                const [type, id] = (event.target.value || '').split('::');
+                editState.boundType = type || '';
+                editState.boundId = id || '';
+            }
+        });
         root.querySelector('#cv-grid').addEventListener('click', event => {
             const removeBtn = event.target.closest('[data-cv-remove]');
             if (removeBtn) {
@@ -476,6 +621,10 @@
                 if (camera) removeCamera(camera);
                 return;
             }
+            // La tarjeta completa (ver camera-card.js) maneja sus propios
+            // clics -- botones, toggles, el slider de enfoque -- así que un
+            // clic ahí adentro nunca debe además abrir el lightbox de acá.
+            if (event.target.closest('.cam-card')) return;
             const card = event.target.closest('.cv-card');
             if (!card) return;
             const camera = state.cameras.find(item => item.id === card.dataset.cvCamera);

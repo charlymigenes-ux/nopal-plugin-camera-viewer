@@ -3,15 +3,22 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from backend.auth_deps import require_auth, require_role
 
-from .services import usb_camera_service
-from .services.camera_service import get_cameras, register_camera, unregister_camera
+from .services import timelapse_service, usb_camera_service
+from .services.camera_service import get_camera_by_id, get_cameras, register_camera, unregister_camera, update_camera
 from .services.onvif_service import resolve_rtsp_uri_autoscan, resolve_rtsp_uri_from_url
 
 router = APIRouter()
+
+
+def _require_camera(camera_id: str, request_host: Optional[str] = None) -> dict:
+    camera = get_camera_by_id(camera_id, request_host=request_host)
+    if camera is None:
+        raise HTTPException(status_code=404, detail="Cámara no encontrada")
+    return camera
 
 
 @router.get("/api/cameras")
@@ -65,6 +72,29 @@ async def camera_register_onvif_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
     entry = register_camera(name.strip() or "Cámara", rtsp_uri)
     return {**entry, "onvif_port": resolved_port}
+
+
+@router.post("/api/cameras/{camera_id}/update")
+async def camera_update_endpoint(
+    camera_id: str,
+    name: str = Form(...),
+    purpose: Optional[str] = Form(None),
+    purpose_note: Optional[str] = Form(None),
+    bound_device_type: Optional[str] = Form(None),
+    bound_device_id: Optional[str] = Form(None),
+    user: dict = Depends(require_role("admin")),
+):
+    if not name.strip():
+        raise HTTPException(status_code=400, detail="El nombre es obligatorio")
+    bound_device = (
+        {"type": bound_device_type, "id": bound_device_id}
+        if bound_device_type and bound_device_id
+        else None
+    )
+    entry = update_camera(camera_id, name.strip(), purpose, purpose_note, bound_device)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Cámara no encontrada")
+    return entry
 
 
 @router.post("/api/cameras/remove")
@@ -137,3 +167,120 @@ async def camera_usb_stream_endpoint(camera_id: str, user: dict = Depends(requir
             await usb_camera_service.unsubscribe(camera_id, queue)
 
     return StreamingResponse(generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+# ── Timelapse / grabación / enfoque -- ver timelapse_service.py ──
+
+@router.post("/api/cameras/{camera_id}/timelapse")
+async def camera_timelapse_config_endpoint(
+    camera_id: str,
+    enabled: Optional[bool] = Form(None),
+    interval_s: Optional[int] = Form(None),
+    fps: Optional[int] = Form(None),
+    overlay: Optional[bool] = Form(None),
+    motion_detection: Optional[bool] = Form(None),
+    user: dict = Depends(require_role("admin")),
+):
+    _require_camera(camera_id)
+    config = timelapse_service.set_timelapse_config(
+        camera_id, enabled=enabled, interval_s=interval_s, fps=fps, overlay=overlay, motion_detection=motion_detection,
+    )
+    if config is None:
+        raise HTTPException(status_code=404, detail="Cámara no encontrada")
+    return config
+
+
+@router.post("/api/cameras/{camera_id}/timelapse/pause")
+async def camera_timelapse_pause_endpoint(camera_id: str, user: dict = Depends(require_role("admin"))):
+    config = timelapse_service.pause_timelapse(camera_id)
+    if config is None:
+        raise HTTPException(status_code=404, detail="Cámara no encontrada")
+    return config
+
+
+@router.post("/api/cameras/{camera_id}/timelapse/resume")
+async def camera_timelapse_resume_endpoint(camera_id: str, user: dict = Depends(require_role("admin"))):
+    config = timelapse_service.resume_timelapse(camera_id)
+    if config is None:
+        raise HTTPException(status_code=404, detail="Cámara no encontrada")
+    return config
+
+
+@router.post("/api/cameras/{camera_id}/timelapse/assemble")
+async def camera_timelapse_assemble_endpoint(camera_id: str, user: dict = Depends(require_role("admin"))):
+    _require_camera(camera_id)
+    try:
+        path = await timelapse_service.assemble_timelapse_video(camera_id)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"filename": os.path.basename(path)}
+
+
+@router.get("/api/cameras/{camera_id}/timelapse/stats")
+async def camera_timelapse_stats_endpoint(camera_id: str, user: dict = Depends(require_auth)):
+    _require_camera(camera_id)
+    return timelapse_service.get_timelapse_stats(camera_id)
+
+
+@router.post("/api/cameras/{camera_id}/capture")
+async def camera_capture_endpoint(camera_id: str, request: Request, user: dict = Depends(require_role("admin"))):
+    _require_camera(camera_id, request_host=request.url.hostname)
+    try:
+        path = await timelapse_service.capture_and_save(camera_id, request_host=request.url.hostname)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"filename": os.path.basename(path)}
+
+
+@router.get("/api/cameras/{camera_id}/captures")
+async def camera_captures_list_endpoint(camera_id: str, limit: Optional[int] = None, user: dict = Depends(require_auth)):
+    _require_camera(camera_id)
+    return {"captures": timelapse_service.list_captures(camera_id, limit=limit)}
+
+
+@router.get("/api/cameras/{camera_id}/captures/{filename}")
+async def camera_capture_file_endpoint(camera_id: str, filename: str, user: dict = Depends(require_auth)):
+    path = timelapse_service.get_capture_file_path(camera_id, filename)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Captura no encontrada")
+    return FileResponse(path, media_type="image/jpeg")
+
+
+@router.post("/api/cameras/{camera_id}/record/start")
+async def camera_record_start_endpoint(camera_id: str, request: Request, user: dict = Depends(require_role("admin"))):
+    try:
+        path = await timelapse_service.start_recording(camera_id, request_host=request.url.hostname)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"filename": os.path.basename(path)}
+
+
+@router.post("/api/cameras/{camera_id}/record/stop")
+async def camera_record_stop_endpoint(camera_id: str, user: dict = Depends(require_role("admin"))):
+    path = await timelapse_service.stop_recording(camera_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="No hay ninguna grabación en curso para esta cámara")
+    return {"filename": os.path.basename(path)}
+
+
+@router.get("/api/cameras/{camera_id}/focus")
+async def camera_focus_get_endpoint(camera_id: str, user: dict = Depends(require_auth)):
+    camera = _require_camera(camera_id)
+    device_path = camera.get("device_path")
+    if not device_path:
+        return {"supported": False}
+    focus = usb_camera_service.get_focus_control(device_path)
+    if focus is None:
+        return {"supported": False}
+    return {"supported": True, **focus}
+
+
+@router.post("/api/cameras/{camera_id}/focus")
+async def camera_focus_set_endpoint(camera_id: str, value: int = Form(...), user: dict = Depends(require_role("admin"))):
+    camera = _require_camera(camera_id)
+    device_path = camera.get("device_path")
+    if not device_path:
+        raise HTTPException(status_code=400, detail="Esta cámara no admite control de enfoque manual")
+    if not usb_camera_service.set_focus(device_path, value):
+        raise HTTPException(status_code=400, detail="No se pudo cambiar el enfoque")
+    return {"success": True, "value": value}

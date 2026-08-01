@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .pytest_cache/
 camera_registry.json
+camera_captures/

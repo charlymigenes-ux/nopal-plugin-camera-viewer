@@ -31,6 +31,24 @@ GO2RTC_API = "http://127.0.0.1:1984/api"
 HTTP_TIMEOUT = 5
 PROBE_TIMEOUT = 1.5
 
+# Carpeta de capturas/grabaciones de timelapse, hermana de camera_registry.json
+# y uploads/ en la raíz de NOPAL -- mismo criterio que el resto del proyecto
+# (estado por instalación, nunca versionado, ver .gitignore).
+CAPTURES_DIR = "camera_captures"
+
+# `timelapse_config` es opcional y aditivo en cada entrada del registro,
+# mismo criterio que `purpose`/`bound_device` (ver register_camera): los
+# registros de antes de esta feature no lo tienen y se tratan como
+# deshabilitados, nunca como un error.
+DEFAULT_TIMELAPSE_CONFIG: Dict[str, Any] = {
+    "enabled": False,
+    "paused": False,
+    "interval_s": 5,
+    "fps": 25,
+    "overlay": False,
+    "motion_detection": False,
+}
+
 
 def _is_rtsp(url: str) -> bool:
     return url.lower().startswith(("rtsp://", "rtsps://"))
@@ -122,8 +140,79 @@ def register_camera(
         "purpose_note": purpose_note,
         "bound_device": bound_device,
         "device_path": device_path,
+        "timelapse_config": None,
     }
     entries.append(entry)
+    _save_registry(entries)
+    return entry
+
+
+def get_timelapse_config(camera_id: str) -> Optional[Dict[str, Any]]:
+    """None si la cámara no existe -- distinto de "existe pero timelapse
+    nunca se configuró", que devuelve los defaults (`enabled: False`) para
+    que el llamador no tenga que conocer el shape del registro viejo."""
+    entries = _load_registry()
+    entry = next((e for e in entries if e.get("id") == camera_id), None)
+    if entry is None:
+        return None
+    return {**DEFAULT_TIMELAPSE_CONFIG, **(entry.get("timelapse_config") or {})}
+
+
+def update_timelapse_config(camera_id: str, **overrides: Any) -> Optional[Dict[str, Any]]:
+    """Solo pisa las claves pasadas -- así pausar/reanudar no tiene que
+    reenviar intervalo/fps/etc., y viceversa."""
+    entries = _load_registry()
+    entry = next((e for e in entries if e.get("id") == camera_id), None)
+    if entry is None:
+        return None
+    current = {**DEFAULT_TIMELAPSE_CONFIG, **(entry.get("timelapse_config") or {})}
+    current.update({k: v for k, v in overrides.items() if v is not None})
+    entry["timelapse_config"] = current
+    _save_registry(entries)
+    return current
+
+
+def get_camera_by_id(camera_id: str, request_host: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    return next((c for c in get_cameras(request_host=request_host) if c["id"] == camera_id), None)
+
+
+def get_camera_bound_to(device_type: str, device_id: str) -> Optional[Dict[str, Any]]:
+    """Cámara vinculada a un dispositivo puntual (impresora/láser/CNC) con
+    `purpose == "timelapse"` -- ver update_camera, que solo persiste
+    `bound_device` bajo ese propósito. Devuelve la entrada cruda del
+    registro (sin `stream_url` resuelto, ver get_cameras)."""
+    if not device_type or not device_id:
+        return None
+    for entry in _load_registry():
+        bound = entry.get("bound_device")
+        if entry.get("purpose") == "timelapse" and bound and bound.get("type") == device_type and bound.get("id") == device_id:
+            return entry
+    return None
+
+
+def update_camera(
+    camera_id: str,
+    name: Optional[str] = None,
+    purpose: Optional[str] = None,
+    purpose_note: Optional[str] = None,
+    bound_device: Optional[Dict[str, str]] = None,
+) -> Optional[Dict[str, Any]]:
+    """Edita nombre/propósito de una cámara ya registrada -- nunca la fuente
+    (`source_url`/`device_path`): cambiar de dónde sale el video es dar de
+    alta una cámara nueva, no editar la existente, así que esos dos campos
+    no se tocan acá. `purpose=None` dado explícitamente (vs. simplemente no
+    mandado) se usa para pasar de timelapse/other de vuelta a monitoreo
+    general, así que se aplica siempre que el llamador lo pase -- ver
+    router.py, que manda los tres campos de propósito juntos."""
+    entries = _load_registry()
+    entry = next((e for e in entries if e.get("id") == camera_id), None)
+    if entry is None:
+        return None
+    if name is not None:
+        entry["name"] = name
+    entry["purpose"] = purpose
+    entry["purpose_note"] = purpose_note if purpose == "other" else None
+    entry["bound_device"] = bound_device if purpose == "timelapse" else None
     _save_registry(entries)
     return entry
 

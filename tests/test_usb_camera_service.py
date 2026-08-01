@@ -185,6 +185,78 @@ class TestSharedStream:
         assert "cam-idle" not in usb_camera_service._streams
 
 
+class TestFocusControl:
+    def _fake_queryctrl_bytes(self, minimum=0, maximum=255, step=1, default_value=128, flags=0):
+        return struct.pack(
+            usb_camera_service._V4L2_QUERYCTRL_STRUCT_FMT,
+            usb_camera_service.V4L2_CID_FOCUS_ABSOLUTE, 1, b"Focus".ljust(32, b"\x00"),
+            minimum, maximum, step, default_value, flags, 0, 0,
+        )
+
+    def _fake_control_bytes(self, value=128):
+        return struct.pack(usb_camera_service._V4L2_CONTROL_STRUCT_FMT, usb_camera_service.V4L2_CID_FOCUS_ABSOLUTE, value)
+
+    def test_returns_range_and_current_value(self, monkeypatch, tmp_path):
+        fake_path = tmp_path / "fake-video-device"
+        fake_path.write_bytes(b"")
+
+        def fake_ioctl(fd, request, buf):
+            if request == usb_camera_service.VIDIOC_QUERYCTRL:
+                buf[:] = self._fake_queryctrl_bytes(minimum=0, maximum=255, step=5, default_value=100)
+            elif request == usb_camera_service.VIDIOC_G_CTRL:
+                buf[:] = self._fake_control_bytes(value=150)
+            return 0
+
+        monkeypatch.setattr(usb_camera_service.fcntl, "ioctl", fake_ioctl)
+        result = usb_camera_service.get_focus_control(str(fake_path))
+        assert result == {"minimum": 0, "maximum": 255, "step": 5, "default": 100, "current": 150}
+
+    def test_disabled_control_returns_none(self, monkeypatch, tmp_path):
+        fake_path = tmp_path / "fake-video-device"
+        fake_path.write_bytes(b"")
+
+        def fake_ioctl(fd, request, buf):
+            buf[:] = self._fake_queryctrl_bytes(flags=usb_camera_service.V4L2_CTRL_FLAG_DISABLED)
+            return 0
+
+        monkeypatch.setattr(usb_camera_service.fcntl, "ioctl", fake_ioctl)
+        assert usb_camera_service.get_focus_control(str(fake_path)) is None
+
+    def test_unsupported_control_returns_none(self, monkeypatch, tmp_path):
+        # La mayoría de las webcams UVC de foco fijo ni siquiera tienen este
+        # control -- VIDIOC_QUERYCTRL devuelve EINVAL, no un valor con flags.
+        fake_path = tmp_path / "fake-video-device"
+        fake_path.write_bytes(b"")
+
+        def fake_ioctl(fd, request, buf):
+            raise OSError("Invalid argument")
+
+        monkeypatch.setattr(usb_camera_service.fcntl, "ioctl", fake_ioctl)
+        assert usb_camera_service.get_focus_control(str(fake_path)) is None
+
+    def test_unreadable_device_returns_none(self):
+        assert usb_camera_service.get_focus_control("/dev/does-not-exist-nopal-test") is None
+
+    def test_set_focus_success(self, monkeypatch, tmp_path):
+        fake_path = tmp_path / "fake-video-device"
+        fake_path.write_bytes(b"")
+        monkeypatch.setattr(usb_camera_service.fcntl, "ioctl", lambda fd, request, buf: 0)
+        assert usb_camera_service.set_focus(str(fake_path), 200) is True
+
+    def test_set_focus_failure_returns_false(self, monkeypatch, tmp_path):
+        fake_path = tmp_path / "fake-video-device"
+        fake_path.write_bytes(b"")
+
+        def fake_ioctl(fd, request, buf):
+            raise OSError("Invalid argument")
+
+        monkeypatch.setattr(usb_camera_service.fcntl, "ioctl", fake_ioctl)
+        assert usb_camera_service.set_focus(str(fake_path), 200) is False
+
+    def test_set_focus_unreadable_device_returns_false(self):
+        assert usb_camera_service.set_focus("/dev/does-not-exist-nopal-test", 100) is False
+
+
 def test_is_device_present_reflects_real_filesystem(tmp_path):
     missing = tmp_path / "video99"
     assert usb_camera_service.is_device_present(str(missing)) is False
