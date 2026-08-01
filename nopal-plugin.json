@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "camera-viewer",
   "name": "Cámaras",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "NOPAL Labs",
   "category": "Producción",
   "description": "Agrega cámaras por URL de stream MJPEG, ONVIF o webcam USB, y míralas en vivo desde el panel.",

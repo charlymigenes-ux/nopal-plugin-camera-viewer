@@ -11,7 +11,13 @@
     if (!window.NopalCameraCard && !document.getElementById('camera-card-script')) {
         const cardScript = document.createElement('script');
         cardScript.id = 'camera-card-script';
-        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js';
+        // Cache-busting a mano (?v=) -- este script no pasa por
+        // versionedPluginAssetUrl() de NOPAL core (eso solo versiona el
+        // script/style que declara nopal-plugin.json, no algo que un plugin
+        // inyecta por su cuenta), así que hay que bumpear este número cada
+        // vez que cambie camera-card.js o el navegador sigue sirviendo una
+        // copia vieja cacheada indefinidamente.
+        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js?v=1.1.0';
         document.body.appendChild(cardScript);
     }
 
