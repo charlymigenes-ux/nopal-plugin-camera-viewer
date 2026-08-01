@@ -24,6 +24,7 @@
     const state = {
         cameras: [],   // /api/cameras
         loading: false,
+        gridLayout: localStorage.getItem('cv-grid-layout') || '2x2',
     };
 
     // Estado de la pestaña USB -- separado de `state` porque es efímero (se
@@ -66,6 +67,19 @@
     const ICON_TRASH = '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 10v6M14 10v6"/>';
     const ICON_CLOSE = '<path d="M18 6 6 18M6 6l12 12"/>';
     const ICON_USB = '<path d="M12 2v9"/><path d="m8 6 4-4 4 4"/><circle cx="12" cy="17" r="3"/><path d="M12 14v-3"/><path d="m9 9-2 2"/><path d="m15 9 2 2"/>';
+    const ICON_TAG = '<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/>';
+    const ICON_TARGET = '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>';
+    const ICON_MONITOR = '<rect x="2" y="4" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>';
+    const ICON_CLOCK = '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>';
+    const ICON_GRID_APPS = '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>';
+    const ICON_VIDEO_CAM = '<path d="M23 7 16 12l7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/>';
+    const ICON_FILM = '<rect x="2" y="3" width="20" height="18" rx="2"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="2" y1="9" x2="7" y2="9"/><line x1="2" y1="15" x2="7" y2="15"/><line x1="17" y1="9" x2="22" y2="9"/><line x1="17" y1="15" x2="22" y2="15"/>';
+    const ICON_INFO = '<circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>';
+    const ICON_SAVE = '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>';
+    const ICON_MINUS = '<line x1="5" y1="12" x2="19" y2="12"/>';
+    const ICON_GRID_1 = '<rect x="4" y="4" width="16" height="16" rx="2"/>';
+    const ICON_GRID_2 = '<rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/>';
+    const ICON_GRID_3 = '<rect x="3" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16" y="3" width="5" height="18" rx="1"/>';
     const ICON_REFRESH = '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>';
 
     const esc = value => typeof window.escapeHtml === 'function' ? window.escapeHtml(value) : String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -331,29 +345,84 @@
     // nueva, no editar la existente) ────────────────────────────────────
 
     function renderEditPurposeHtml() {
-        const boundSection = editState.purpose === 'timelapse' ? `
-            <label>
-                <span>¿Qué dispositivo vas a filmar?</span>
-                <select id="cv-edit-bound-select" ${editState.loadingBoundOptions ? 'disabled' : ''}>
-                    <option value="">${editState.loadingBoundOptions ? 'Cargando dispositivos…' : 'Elegí un dispositivo'}</option>
-                    ${editState.boundOptions.map(opt => `<option value="${esc(opt.type)}::${esc(opt.id)}" ${editState.boundType === opt.type && editState.boundId === opt.id ? 'selected' : ''}>${esc(opt.brandLabel)} — ${esc(opt.name)}</option>`).join('')}
-                </select>
-            </label>
-            <div class="cv-edit-timelapse-params">
-                <label><span>Intervalo (segundos)</span><input type="number" id="cv-edit-interval-input" min="1" step="1" value="${editState.intervalS}"></label>
-                <label><span>FPS del video final</span><input type="number" id="cv-edit-fps-input" min="1" step="1" value="${editState.fps}"></label>
-            </div>` : '';
-        const noteSection = editState.purpose === 'other' ? `
-            <label><span>¿Para qué la vas a usar?</span><input type="text" id="cv-edit-note-input" maxlength="140" value="${esc(editState.note)}" placeholder="Ej. vigilar el taller"></label>` : '';
-        return `
-            <div class="cv-usb-purpose">
-                <span>¿Para qué la vas a usar?</span>
-                <label class="cv-usb-radio"><input type="radio" name="cv-edit-purpose" value="monitoring" ${editState.purpose === 'monitoring' ? 'checked' : ''}><span>Monitoreo general</span></label>
-                <label class="cv-usb-radio"><input type="radio" name="cv-edit-purpose" value="timelapse" ${editState.purpose === 'timelapse' ? 'checked' : ''}><span>Timelapse de un dispositivo</span></label>
-                <label class="cv-usb-radio"><input type="radio" name="cv-edit-purpose" value="other" ${editState.purpose === 'other' ? 'checked' : ''}><span>Otra función</span></label>
+        const purposeCards = `
+            <div class="cv-field-group">
+                <span class="cv-field-label">${icon(ICON_TARGET, 14)} ¿PARA QUÉ LA VAS A USAR?</span>
+                <div class="cv-purpose-cards">
+                    <label class="cv-purpose-card">
+                        <input type="radio" name="cv-edit-purpose" value="monitoring" ${editState.purpose === 'monitoring' ? 'checked' : ''}>
+                        <span class="cv-purpose-card-radio"></span>
+                        <span class="cv-purpose-card-icon">${icon(ICON_MONITOR, 22)}</span>
+                        <strong>Monitoreo general</strong>
+                        <small>Supervisión en tiempo real</small>
+                    </label>
+                    <label class="cv-purpose-card">
+                        <input type="radio" name="cv-edit-purpose" value="timelapse" ${editState.purpose === 'timelapse' ? 'checked' : ''}>
+                        <span class="cv-purpose-card-radio"></span>
+                        <span class="cv-purpose-card-icon">${icon(ICON_CLOCK, 22)}</span>
+                        <strong>Timelapse de un dispositivo</strong>
+                        <small>Captura en intervalos</small>
+                    </label>
+                    <label class="cv-purpose-card">
+                        <input type="radio" name="cv-edit-purpose" value="other" ${editState.purpose === 'other' ? 'checked' : ''}>
+                        <span class="cv-purpose-card-radio"></span>
+                        <span class="cv-purpose-card-icon">${icon(ICON_GRID_APPS, 22)}</span>
+                        <strong>Otra función</strong>
+                        <small>Uso personalizado</small>
+                    </label>
+                </div>
+            </div>`;
+
+        const timelapseDetails = editState.purpose === 'timelapse' ? `
+            <div class="cv-field-group">
+                <span class="cv-field-label">${icon(ICON_VIDEO_CAM, 14)} ¿QUÉ DISPOSITIVO VAS A FILMAR?</span>
+                <div class="cv-select-icon">
+                    ${icon(ICON_TARGET, 16)}
+                    <select id="cv-edit-bound-select" ${editState.loadingBoundOptions ? 'disabled' : ''}>
+                        <option value="">${editState.loadingBoundOptions ? 'Cargando dispositivos…' : 'Elegí un dispositivo'}</option>
+                        ${editState.boundOptions.map(opt => `<option value="${esc(opt.type)}::${esc(opt.id)}" ${editState.boundType === opt.type && editState.boundId === opt.id ? 'selected' : ''}>${esc(opt.brandLabel)} — ${esc(opt.name)}</option>`).join('')}
+                    </select>
+                </div>
             </div>
-            ${boundSection}
-            ${noteSection}`;
+            <div class="cv-timelapse-params-row">
+                <div class="cv-timelapse-params-col">
+                    <div class="cv-field-group">
+                        <span class="cv-field-label">${icon(ICON_CLOCK, 14)} INTERVALO (SEGUNDOS)</span>
+                        <div class="cv-stepper-row">
+                            <div class="cv-stepper">
+                                <button type="button" class="cv-stepper-btn" data-cv-step="interval" data-cv-step-dir="-1">${icon(ICON_MINUS, 14)}</button>
+                                <input type="number" id="cv-edit-interval-input" min="1" step="1" value="${editState.intervalS}">
+                                <button type="button" class="cv-stepper-btn" data-cv-step="interval" data-cv-step-dir="1">${icon(ICON_PLUS, 14)}</button>
+                            </div>
+                            <span class="cv-stepper-hint">Tiempo entre cada captura.</span>
+                        </div>
+                    </div>
+                    <div class="cv-field-group">
+                        <span class="cv-field-label">${icon(ICON_FILM, 14)} FPS DEL VIDEO FINAL</span>
+                        <div class="cv-stepper-row">
+                            <div class="cv-stepper">
+                                <button type="button" class="cv-stepper-btn" data-cv-step="fps" data-cv-step-dir="-1">${icon(ICON_MINUS, 14)}</button>
+                                <input type="number" id="cv-edit-fps-input" min="1" step="1" value="${editState.fps}">
+                                <button type="button" class="cv-stepper-btn" data-cv-step="fps" data-cv-step-dir="1">${icon(ICON_PLUS, 14)}</button>
+                            </div>
+                            <span class="cv-stepper-hint">Cuadros por segundo del video generado.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cv-info-panel">
+                    <div class="cv-info-panel-header">${icon(ICON_INFO, 16)}<span>INFORMACIÓN</span></div>
+                    <div class="cv-info-panel-illustration">${icon(ICON_VIDEO_CAM, 26)}<span class="cv-info-panel-dashes"></span>${icon(ICON_GRID_APPS, 22)}</div>
+                    <p>El timelapse capturará imágenes a intervalos definidos y generará un video con la velocidad seleccionada.</p>
+                </div>
+            </div>` : '';
+
+        const noteSection = editState.purpose === 'other' ? `
+            <div class="cv-field-group">
+                <span class="cv-field-label">¿Para qué la vas a usar?</span>
+                <input type="text" id="cv-edit-note-input" maxlength="140" value="${esc(editState.note)}" placeholder="Ej. vigilar el taller">
+            </div>` : '';
+
+        return purposeCards + timelapseDetails + noteSection;
     }
 
     function renderEditPanel() {
@@ -450,10 +519,10 @@
     // completa (timelapse/grabación/enfoque/detección de movimiento/galería
     // de capturas -- ver camera-card.js), no solo la vista en vivo chica que
     // se usa cuando esta misma tarjeta se embebe en el panel de una máquina.
-    // El ícono de eliminar queda afuera del montaje (es gestión de la
-    // cámara en sí, no del timelapse), y el engranaje de dentro de la
-    // tarjeta completa abre el editor de nombre/propósito/vínculo de este
-    // mismo archivo en vez de "navegar" a esta sección (ya estamos acá).
+    // Eliminar la cámara vive en el popup "Configurar cámara" (junto a
+    // Cancelar/Guardar), no como ícono suelto sobre la tarjeta -- y el
+    // engranaje de dentro de la tarjeta completa abre ese mismo popup en vez
+    // de "navegar" a esta sección (ya estamos acá).
     function renderGrid() {
         const grid = root.querySelector('#cv-grid');
         if (!state.cameras.length) {
@@ -462,9 +531,6 @@
         }
         grid.innerHTML = state.cameras.map(camera => `
             <div class="cv-card cv-card-full" data-cv-camera="${camera.id}">
-                <div class="cv-card-full-actions">
-                    <button type="button" class="cv-icon-btn danger" data-cv-remove="${camera.id}" title="Eliminar">${icon(ICON_TRASH, 15)}</button>
-                </div>
                 <div class="cv-camera-full-mount" id="cv-full-mount-${camera.id}"></div>
             </div>`).join('');
         if (!window.NopalCameraCard) return;
@@ -476,6 +542,16 @@
 
     function render() {
         renderGrid();
+    }
+
+    function setLayout(mode) {
+        state.gridLayout = mode;
+        localStorage.setItem('cv-grid-layout', mode);
+        const grid = root.querySelector('#cv-grid');
+        if (grid) grid.className = `cv-grid cv-grid-${mode}`;
+        root.querySelectorAll('[data-cv-layout]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.cvLayout === mode);
+        });
     }
 
     function switchAddTab(tab) {
@@ -530,10 +606,15 @@
                             <h1>Cámaras</h1>
                             <span class="cv-header-sub">NOPAL Labs · v1.0.0</span>
                         </div>
+                        <div class="cv-layout-switch">
+                            <button type="button" class="cv-icon-btn${state.gridLayout === '1x1' ? ' active' : ''}" data-cv-layout="1x1" title="1 por fila">${icon(ICON_GRID_1, 15)}</button>
+                            <button type="button" class="cv-icon-btn${state.gridLayout === '2x2' ? ' active' : ''}" data-cv-layout="2x2" title="2 por fila">${icon(ICON_GRID_2, 15)}</button>
+                            <button type="button" class="cv-icon-btn${state.gridLayout === '3x3' ? ' active' : ''}" data-cv-layout="3x3" title="3 por fila">${icon(ICON_GRID_3, 15)}</button>
+                        </div>
                         <button type="button" class="cv-btn cv-btn-accent" id="cv-add-btn">${icon(ICON_PLUS, 16)}<span>Agregar cámara</span></button>
                     </header>
 
-                    <div class="cv-grid" id="cv-grid"></div>
+                    <div class="cv-grid cv-grid-${state.gridLayout}" id="cv-grid"></div>
                 </div>
 
                 <div class="cv-panel-overlay" id="cv-add-panel" hidden>
@@ -574,12 +655,33 @@
 
                 <div class="cv-panel-overlay" id="cv-edit-panel" hidden>
                     <div class="cv-panel-backdrop" data-cv-close-edit></div>
-                    <div class="cv-panel-dialog">
-                        <div class="cv-panel-header"><span><strong>Configurar cámara</strong></span><button type="button" data-cv-close-edit>${icon(ICON_CLOSE, 16)}</button></div>
-                        <form class="cv-add-form" id="cv-edit-form">
-                            <label><span>Nombre</span><input type="text" id="cv-edit-name-input" maxlength="60" required></label>
+                    <div class="cv-panel-dialog cv-edit-dialog">
+                        <div class="cv-edit-header">
+                            <div class="cv-edit-header-icon">${icon(ICON_CAMERA, 24)}</div>
+                            <div class="cv-edit-header-copy">
+                                <strong>Configurar cámara</strong>
+                                <span>Define el propósito y la captura de tu cámara.</span>
+                            </div>
+                            <button type="button" class="cv-icon-btn cv-edit-close-btn" data-cv-close-edit>${icon(ICON_CLOSE, 16)}</button>
+                        </div>
+                        <form class="cv-add-form cv-edit-form-body" id="cv-edit-form">
+                            <div class="cv-field-group">
+                                <span class="cv-field-label">${icon(ICON_TAG, 14)} NOMBRE DE LA CÁMARA</span>
+                                <div class="cv-input-icon">
+                                    ${icon(ICON_CAMERA, 16)}
+                                    <input type="text" id="cv-edit-name-input" maxlength="60" required>
+                                </div>
+                                <p class="cv-field-hint">Este nombre te ayudará a identificarla fácilmente.</p>
+                            </div>
+                            <hr class="cv-edit-divider">
                             <div id="cv-edit-purpose-section"></div>
-                            <div class="cv-panel-actions"><button type="button" data-cv-close-edit>Cancelar</button><button type="submit" class="cv-btn-accent" id="cv-edit-submit-btn">Guardar</button></div>
+                            <div class="cv-edit-footer">
+                                <button type="button" class="cv-btn cv-btn-danger" id="cv-edit-delete-btn">${icon(ICON_TRASH, 15)}<span>Eliminar cámara</span></button>
+                                <div class="cv-edit-footer-actions">
+                                    <button type="button" class="cv-btn" data-cv-close-edit>${icon(ICON_CLOSE, 15)}<span>Cancelar</span></button>
+                                    <button type="submit" class="cv-btn cv-btn-accent" id="cv-edit-submit-btn">${icon(ICON_SAVE, 15)}<span>Guardar</span></button>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -598,6 +700,7 @@
     }
 
     function bindEvents() {
+        root.querySelectorAll('[data-cv-layout]').forEach(btn => btn.addEventListener('click', () => setLayout(btn.dataset.cvLayout)));
         root.querySelector('#cv-add-btn').addEventListener('click', openAddPanel);
         root.querySelectorAll('[data-cv-close-add]').forEach(el => el.addEventListener('click', closeAddPanel));
         root.querySelectorAll('[data-cv-add-tab]').forEach(btn => btn.addEventListener('click', () => switchAddTab(btn.dataset.cvAddTab)));
@@ -649,13 +752,17 @@
                 editState.fps = Number(event.target.value) || editState.fps;
             }
         });
+        root.querySelector('#cv-edit-purpose-section').addEventListener('click', event => {
+            const stepBtn = event.target.closest('[data-cv-step]');
+            if (!stepBtn) return;
+            const dir = Number(stepBtn.dataset.cvStepDir);
+            const field = stepBtn.dataset.cvStep === 'interval' ? 'intervalS' : 'fps';
+            const inputId = stepBtn.dataset.cvStep === 'interval' ? 'cv-edit-interval-input' : 'cv-edit-fps-input';
+            editState[field] = Math.max(1, (editState[field] || 0) + dir);
+            const input = root.querySelector(`#${inputId}`);
+            if (input) input.value = editState[field];
+        });
         root.querySelector('#cv-grid').addEventListener('click', event => {
-            const removeBtn = event.target.closest('[data-cv-remove]');
-            if (removeBtn) {
-                const camera = state.cameras.find(item => item.id === removeBtn.dataset.cvRemove);
-                if (camera) removeCamera(camera);
-                return;
-            }
             // La tarjeta completa (ver camera-card.js) maneja sus propios
             // clics -- botones, toggles, el slider de enfoque -- así que un
             // clic ahí adentro nunca debe además abrir el lightbox de acá.
@@ -664,6 +771,15 @@
             if (!card) return;
             const camera = state.cameras.find(item => item.id === card.dataset.cvCamera);
             if (camera) openLightbox(camera);
+        });
+        root.querySelector('#cv-edit-delete-btn').addEventListener('click', async () => {
+            const camera = state.cameras.find(item => item.id === editState.cameraId);
+            if (!camera) return;
+            await removeCamera(camera);
+            // removeCamera ya confirma con el usuario -- si canceló, la
+            // cámara sigue en state.cameras y closeEditPanel() de más no
+            // hace daño; si la borró, el popup ya no tiene nada que mostrar.
+            closeEditPanel();
         });
     }
 

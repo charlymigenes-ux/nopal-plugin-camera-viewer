@@ -7,7 +7,12 @@
     --cv-panel: color-mix(in srgb, var(--panel-bg) 94%, transparent);
     --cv-control: color-mix(in srgb, var(--bg) 74%, var(--card-bg));
     --cv-border: var(--border);
-    background: var(--bg);
+    /* Sin background acá -- .view-section (style.css de NOPAL core) no le
+       pone fondo propio a ninguna sección a propósito, así se ve el
+       wallpaper de NOPAL (body.<tema>) detrás. Antes esto pintaba
+       `var(--bg)`, un color sólido (ej. #0f172a, azul oscuro en el tema
+       actual) que tapaba el wallpaper por completo en esta sección
+       puntual -- ninguna otra sección lo hace. */
     color: var(--text);
 }
 
@@ -68,6 +73,9 @@
 
 /* ── Grid de cámaras ── */
 .cv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.cv-grid-1x1 { grid-template-columns: 1fr; }
+.cv-grid-2x2 { grid-template-columns: repeat(2, 1fr); }
+.cv-grid-3x3 { grid-template-columns: repeat(3, 1fr); }
 .cv-empty { color: var(--text-muted); font-size: .85rem; padding: 8px 0; grid-column: 1 / -1; }
 
 .cv-card {
@@ -125,6 +133,9 @@
     cursor: pointer;
     flex-shrink: 0;
 }
+.cv-icon-btn.active { border-color: var(--cv-accent); background: rgba(var(--cv-accent-rgb), .16); color: var(--cv-accent); }
+
+.cv-layout-switch { display: flex; gap: 4px; }
 .cv-icon-btn:hover { border-color: rgba(var(--cv-accent-rgb), .5); color: var(--cv-accent); }
 .cv-icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
 
@@ -278,45 +289,194 @@
 
 .cv-usb-hint { font-size: .74rem; color: var(--text-muted); margin: 2px 0 0; }
 
-.cv-edit-timelapse-params { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* ── Modal "Configurar cámara" (rediseño con secciones con ícono, tarjetas
+   de propósito y steppers de intervalo/FPS) ── */
+.cv-btn-danger { border-color: rgba(239, 68, 68, .4); color: #ef4444; }
+.cv-btn-danger:hover { border-color: #ef4444; background: rgba(239, 68, 68, .12); color: #ef4444; }
+
+.cv-edit-dialog { width: min(560px, 94vw); gap: 0; padding: 20px 22px 22px; }
+
+.cv-edit-header { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 16px; }
+.cv-edit-header-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--cv-accent-rgb), .35);
+    background: rgba(var(--cv-accent-rgb), .12);
+    color: var(--cv-accent);
+    flex-shrink: 0;
+}
+.cv-edit-header-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cv-edit-header-copy strong { font-size: 1.05rem; color: var(--text); }
+.cv-edit-header-copy span { font-size: .8rem; color: var(--text-muted); }
+.cv-edit-close-btn { margin-top: 2px; }
+
+.cv-edit-form-body { gap: 16px; }
+.cv-edit-divider { border: none; border-top: 1px solid var(--cv-border); margin: 0; }
+
+.cv-field-group { display: flex; flex-direction: column; gap: 8px; }
+.cv-field-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.cv-field-hint { margin: 0; font-size: .76rem; color: var(--text-muted); }
+
+.cv-input-icon,
+.cv-select-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    border: 1px solid rgba(var(--cv-accent-rgb), .4);
+    border-radius: 10px;
+    background: var(--cv-control);
+    color: var(--cv-accent);
+}
+.cv-input-icon input,
+.cv-select-icon select {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 9px 0;
+    color: var(--text);
+    font-size: .85rem;
+}
+.cv-input-icon input:focus,
+.cv-select-icon select:focus { outline: none; }
+.cv-select-icon select { cursor: pointer; }
+
+.cv-purpose-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cv-purpose-card {
+    position: relative;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--cv-border);
+    border-radius: 12px;
+    background: var(--cv-control);
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.cv-purpose-card input { position: absolute; opacity: 0; width: 0; height: 0; }
+.cv-purpose-card-radio {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1px solid var(--cv-border);
+    background: var(--cv-control);
+}
+.cv-purpose-card input:checked ~ .cv-purpose-card-radio {
+    border-color: var(--cv-accent);
+    background: var(--cv-accent);
+    box-shadow: inset 0 0 0 3px var(--cv-control);
+}
+.cv-purpose-card-icon { color: var(--cv-accent); }
+.cv-purpose-card strong { font-size: .84rem; color: var(--text); }
+.cv-purpose-card small { font-size: .72rem; color: var(--text-muted); }
+.cv-purpose-card:has(input:checked) {
+    border-color: var(--cv-accent);
+    box-shadow: 0 0 0 3px rgba(var(--cv-accent-rgb), .18);
+    background: rgba(var(--cv-accent-rgb), .1);
+}
+
+.cv-timelapse-params-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
+.cv-timelapse-params-col { display: flex; flex-direction: column; gap: 14px; }
+.cv-stepper-row { display: flex; align-items: center; gap: 10px; }
+.cv-stepper {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--cv-border);
+    border-radius: 10px;
+    background: var(--cv-control);
+    overflow: hidden;
+}
+.cv-stepper-btn {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 30px;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.cv-stepper-btn:hover { color: var(--cv-accent); }
+.cv-stepper input {
+    width: 48px;
+    border: none;
+    border-left: 1px solid var(--cv-border);
+    border-right: 1px solid var(--cv-border);
+    background: none;
+    text-align: center;
+    padding: 7px 0;
+    color: var(--text);
+    font-size: .85rem;
+}
+.cv-stepper input:focus { outline: none; }
+.cv-stepper-hint { flex: 1; font-size: .72rem; color: var(--text-muted); }
+
+.cv-info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--cv-border);
+    border-radius: 10px;
+    background: var(--cv-control);
+}
+.cv-info-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.cv-info-panel-illustration { display: flex; align-items: center; gap: 6px; color: var(--cv-accent); }
+.cv-info-panel-dashes { flex: 1; border-top: 2px dashed rgba(var(--cv-accent-rgb), .5); }
+.cv-info-panel p { margin: 0; font-size: .76rem; line-height: 1.4; color: var(--text-muted); }
+
+.cv-edit-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 4px;
+}
+.cv-edit-footer-actions { display: flex; gap: 8px; }
+
+@media (max-width: 600px) {
+    .cv-purpose-cards { grid-template-columns: 1fr; }
+    .cv-timelapse-params-row { grid-template-columns: 1fr; }
+    .cv-edit-footer { flex-direction: column-reverse; align-items: stretch; }
+    .cv-edit-footer-actions { justify-content: flex-end; }
+}
 
 @media (max-width: 600px) {
     .cv-grid { grid-template-columns: 1fr; }
 }
 
 /* Tarjeta completa (ver camera-card.js) montada dentro de la galería propia
-   del plugin -- este wrapper es el que ahora trae el fondo/borde visual
-   (mismo tono que el resto de tarjetas de esta sección, --cv-card/--cv-border),
-   así que el ícono de eliminar queda visualmente DENTRO de la tarjeta en vez
-   de flotando arriba; la tarjeta interna (.cam-card, estilos en style.css de
-   NOPAL core) pierde su propio fondo/borde acá adentro para no duplicarlo. */
+   del plugin -- sin fondo/borde propio en el wrapper, la tarjeta interna
+   (.cam-card, estilos en style.css de NOPAL core) ya trae los suyos.
+   Eliminar la cámara vive en el popup "Configurar cámara" (botón
+   "Eliminar cámara" junto a Cancelar/Guardar), no acá. */
 .cv-card.cv-card-full {
-    background: var(--cv-card);
-    border: 1px solid var(--cv-border);
-    border-radius: var(--radius-lg, 14px);
-    padding: 10px;
-    gap: 6px;
-}
-.cv-card-full .cam-card {
-    border: none;
     background: transparent;
-    padding: 0;
-}
-.cv-card-full-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 6px;
-}
-/* Rojo neón siempre encendido (no solo al pasar el mouse) -- eliminar una
-   cámara es destructivo, tiene que leerse como tal de entrada. */
-.cv-card-full-actions .cv-icon-btn.danger {
-    border-color: #ef4444;
-    color: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, .55);
-}
-.cv-card-full-actions .cv-icon-btn.danger:hover {
-    background: rgba(239, 68, 68, .16);
-    box-shadow: 0 0 14px rgba(239, 68, 68, .8);
+    border: none;
+    border-radius: 0;
 }
 .cv-camera-full-mount:empty {
     display: none;
