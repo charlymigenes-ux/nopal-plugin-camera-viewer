@@ -111,6 +111,37 @@
         }
     }
 
+    // Mismas fuentes que BOUND_DEVICE_SOURCES en camera-viewer.js (el
+    // selector "¿qué dispositivo vas a filmar?" del editor) -- duplicado acá
+    // a propósito: este archivo se monta también fuera de la sección del
+    // plugin (modal de impresora, dashboard) y no debe depender de que
+    // camera-viewer.js esté cargado para resolver el nombre lindo de un
+    // bound_device.id que en la mayoría de las marcas es un serial/host, no
+    // un nombre.
+    const BOUND_DEVICE_SOURCES = [
+        { type: 'bambu', url: '/api/bambu/printers', listKey: 'printers' },
+        { type: 'elegoo', url: '/api/elegoo/printers', listKey: 'printers' },
+        { type: 'flashforge', url: '/api/flashforge/printers', listKey: 'printers' },
+        { type: 'marlin', url: '/api/marlin-printers/registry/status', listKey: 'printers' },
+        { type: 'klipper', url: '/api/printers/status', listKey: 'printers' },
+        { type: 'laser', url: '/api/laser/registry/status', listKey: 'lasers' },
+        { type: 'cnc', url: '/api/laser/registry/status', listKey: 'lasers' },
+    ];
+
+    async function resolveBoundDeviceName(boundDevice) {
+        if (!boundDevice) return null;
+        const source = BOUND_DEVICE_SOURCES.find(s => s.type === boundDevice.type);
+        if (!source) return boundDevice.id;
+        try {
+            const data = await api(source.url);
+            const list = data[source.listKey] || [];
+            const entry = list.find(e => String(e.id ?? e.device ?? e.host ?? e.name) === String(boundDevice.id));
+            return entry?.name || boundDevice.id;
+        } catch (error) {
+            return boundDevice.id;
+        }
+    }
+
     function sourceLabel(camera) {
         if (camera.device_path) return 'USB';
         const url = camera.source_url || '';
@@ -135,13 +166,14 @@
                     <div class="cam-card-title-row">
                         ${ICON_CAMERA}
                         <strong>${esc(camera.name)}</strong>
-                        <span class="cam-status-pill"><span class="cam-status-dot"></span><span class="cam-status-text">En línea</span></span>
+                        <span class="cam-status-pill"><span class="cam-status-dot"></span><span class="cam-status-text"></span></span>
                     </div>
                     <button type="button" class="cam-icon-btn" data-cam-action="settings" title="Configurar timelapse">${ICON_SETTINGS}</button>
                 </div>
                 <div class="cam-card-meta">
                     <span>Fuente: <strong>${esc(sourceLabel(camera))}</strong></span>
                     <span>Última captura: <strong data-cam-field="last-capture">--</strong></span>
+                    ${camera.bound_device ? `<span>Vinculada a: <strong data-cam-field="bound-device">--</strong></span>` : ''}
                 </div>
 
                 <div class="cam-timelapse-row">
@@ -438,6 +470,11 @@
                 bindEvents(cardEl);
                 await loadFocusSupport(cardEl);
                 await refreshStats();
+                if (camera.bound_device) {
+                    const name = await resolveBoundDeviceName(camera.bound_device);
+                    const field = cardEl.querySelector('[data-cam-field="bound-device"]');
+                    if (field) field.textContent = name || camera.bound_device.id;
+                }
             }
         }
 

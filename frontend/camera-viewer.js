@@ -17,7 +17,7 @@
         // inyecta por su cuenta), así que hay que bumpear este número cada
         // vez que cambie camera-card.js o el navegador sigue sirviendo una
         // copia vieja cacheada indefinidamente.
-        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js?v=1.1.0';
+        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js?v=1.2.0';
         document.body.appendChild(cardScript);
     }
 
@@ -52,6 +52,8 @@
         boundType: '',
         boundId: '',
         note: '',
+        intervalS: 5,
+        fps: 25,
         boundOptions: [],
         loadingBoundOptions: false,
     };
@@ -336,7 +338,11 @@
                     <option value="">${editState.loadingBoundOptions ? 'Cargando dispositivos…' : 'Elegí un dispositivo'}</option>
                     ${editState.boundOptions.map(opt => `<option value="${esc(opt.type)}::${esc(opt.id)}" ${editState.boundType === opt.type && editState.boundId === opt.id ? 'selected' : ''}>${esc(opt.brandLabel)} — ${esc(opt.name)}</option>`).join('')}
                 </select>
-            </label>` : '';
+            </label>
+            <div class="cv-edit-timelapse-params">
+                <label><span>Intervalo (segundos)</span><input type="number" id="cv-edit-interval-input" min="1" step="1" value="${editState.intervalS}"></label>
+                <label><span>FPS del video final</span><input type="number" id="cv-edit-fps-input" min="1" step="1" value="${editState.fps}"></label>
+            </div>` : '';
         const noteSection = editState.purpose === 'other' ? `
             <label><span>¿Para qué la vas a usar?</span><input type="text" id="cv-edit-note-input" maxlength="140" value="${esc(editState.note)}" placeholder="Ej. vigilar el taller"></label>` : '';
         return `
@@ -367,6 +373,11 @@
         editState.boundType = camera.bound_device?.type || '';
         editState.boundId = camera.bound_device?.id || '';
         editState.note = camera.purpose_note || '';
+        // /api/cameras ya trae timelapse_config completo (get_cameras()
+        // spreadea la entrada entera del registro) -- no hace falta un
+        // fetch aparte para precargar estos valores.
+        editState.intervalS = camera.timelapse_config?.interval_s ?? 5;
+        editState.fps = camera.timelapse_config?.fps ?? 25;
         editState.boundOptions = [];
         editState.loadingBoundOptions = false;
         root.querySelector('#cv-edit-panel').hidden = false;
@@ -394,6 +405,16 @@
         submitBtn.disabled = true;
         try {
             await api(`/api/cameras/${editState.cameraId}/update`, { method: 'POST', body: new URLSearchParams(params) });
+            if (editState.purpose === 'timelapse') {
+                // Intervalo/FPS son del motor de timelapse (endpoint aparte,
+                // ver timelapse_service.py), no del registro de propósito/
+                // vínculo -- por eso es una segunda llamada, no un campo más
+                // del POST de arriba.
+                await api(`/api/cameras/${editState.cameraId}/timelapse`, {
+                    method: 'POST',
+                    body: new URLSearchParams({ interval_s: editState.intervalS, fps: editState.fps }),
+                });
+            }
             closeEditPanel();
             toast(`${name}: cámara actualizada.`);
             await refreshAll();
@@ -618,6 +639,14 @@
                 const [type, id] = (event.target.value || '').split('::');
                 editState.boundType = type || '';
                 editState.boundId = id || '';
+                return;
+            }
+            if (event.target.id === 'cv-edit-interval-input') {
+                editState.intervalS = Number(event.target.value) || editState.intervalS;
+                return;
+            }
+            if (event.target.id === 'cv-edit-fps-input') {
+                editState.fps = Number(event.target.value) || editState.fps;
             }
         });
         root.querySelector('#cv-grid').addEventListener('click', event => {

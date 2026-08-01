@@ -278,27 +278,45 @@
 
 .cv-usb-hint { font-size: .74rem; color: var(--text-muted); margin: 2px 0 0; }
 
+.cv-edit-timelapse-params { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
 @media (max-width: 600px) {
     .cv-grid { grid-template-columns: 1fr; }
 }
 
 /* Tarjeta completa (ver camera-card.js) montada dentro de la galería propia
-   del plugin -- sin fondo/borde propio acá, la tarjeta interna (.cam-card,
-   estilos en style.css de NOPAL core) ya trae los suyos; si se apilaran los
-   dos se vería una tarjeta adentro de otra tarjeta. El ícono de eliminar
-   queda en una franja aparte arriba, no superpuesto, para no competir con
-   el engranaje propio de la tarjeta completa. */
+   del plugin -- este wrapper es el que ahora trae el fondo/borde visual
+   (mismo tono que el resto de tarjetas de esta sección, --cv-card/--cv-border),
+   así que el ícono de eliminar queda visualmente DENTRO de la tarjeta en vez
+   de flotando arriba; la tarjeta interna (.cam-card, estilos en style.css de
+   NOPAL core) pierde su propio fondo/borde acá adentro para no duplicarlo. */
 .cv-card.cv-card-full {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    overflow: visible;
+    background: var(--cv-card);
+    border: 1px solid var(--cv-border);
+    border-radius: var(--radius-lg, 14px);
+    padding: 10px;
     gap: 6px;
+}
+.cv-card-full .cam-card {
+    border: none;
+    background: transparent;
+    padding: 0;
 }
 .cv-card-full-actions {
     display: flex;
     justify-content: flex-end;
     gap: 6px;
+}
+/* Rojo neón siempre encendido (no solo al pasar el mouse) -- eliminar una
+   cámara es destructivo, tiene que leerse como tal de entrada. */
+.cv-card-full-actions .cv-icon-btn.danger {
+    border-color: #ef4444;
+    color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, .55);
+}
+.cv-card-full-actions .cv-icon-btn.danger:hover {
+    background: rgba(239, 68, 68, .16);
+    box-shadow: 0 0 14px rgba(239, 68, 68, .8);
 }
 .cv-camera-full-mount:empty {
     display: none;
