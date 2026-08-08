@@ -237,6 +237,19 @@ async def _read_frames_loop(camera_id: str, stream: _CameraStream):
         while True:
             chunk = await stream.process.stdout.read(65536)
             if not chunk:
+                # ffmpeg cerró stdout (crasheó o el dispositivo lo rechazó,
+                # ej. "Device or resource busy" si otro proceso -- Crowsnest,
+                # otra pestaña -- ya tiene la cámara abierta). stderr estaba
+                # descartado antes (DEVNULL) y este motivo real nunca quedaba
+                # en el log; ahora se captura y se loguea acá.
+                stderr_text = ""
+                if stream.process.stderr is not None:
+                    try:
+                        stderr_text = (await stream.process.stderr.read()).decode(errors="replace").strip()
+                    except Exception:
+                        pass
+                if stderr_text:
+                    logger.warning(f"[{camera_id}] ffmpeg terminó: {stderr_text.splitlines()[-1]}")
                 break
             buffer += chunk
             while True:
@@ -283,10 +296,17 @@ async def ensure_stream(camera_id: str, device_path: str) -> _CameraStream:
             raise RuntimeError("ffmpeg no está instalado en este equipo (instalalo con: sudo apt install ffmpeg)")
 
         process = await asyncio.create_subprocess_exec(
-            FFMPEG_BIN, "-f", "v4l2", "-i", device_path,
+            # -loglevel error: sin esto, ffmpeg mete progreso/estadísticas
+            # de rutina en stderr todo el tiempo que esté corriendo -- como
+            # ese pipe ahora se lee recién al terminar (ver
+            # _read_frames_loop), dejarlo en su verbosidad normal podría
+            # llenar el buffer del pipe y colgar a ffmpeg a mitad de un
+            # stream que sí está funcionando. Con "error" solo escribe algo
+            # si de verdad falla, que es justo lo que queremos capturar.
+            FFMPEG_BIN, "-loglevel", "error", "-f", "v4l2", "-i", device_path,
             "-f", "mjpeg", "-q:v", "5", "-r", "10", "pipe:1",
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
         )
         stream = _CameraStream(device_path)
         stream.process = process
@@ -327,7 +347,19 @@ async def stop_stream(camera_id: str) -> None:
     stream = _streams.pop(camera_id, None)
     if stream is None:
         return
-    if stream.reader_task is not None and not stream.reader_task.done():
+    # _read_frames_loop llama a stop_stream desde su propio finally -- si
+    # ESE es el caller, reader_task es la tarea actual (asyncio.current_task())
+    # y cancelarla acá se autocancela a mitad del await de más abajo
+    # (process.wait()), cortando la función antes del logger.info final. Por
+    # eso nunca se veía "ffmpeg detenido" cuando ffmpeg fallaba solo (ver
+    # "Device or resource busy" en el README/troubleshooting) -- la
+    # cancelación solo tiene sentido cuando stop_stream se llama desde
+    # AFUERA del reader_task (ej. _delayed_stop, por inactividad).
+    if (
+        stream.reader_task is not None
+        and not stream.reader_task.done()
+        and stream.reader_task is not asyncio.current_task()
+    ):
         stream.reader_task.cancel()
     if stream.process is not None and stream.process.returncode is None:
         stream.process.kill()
