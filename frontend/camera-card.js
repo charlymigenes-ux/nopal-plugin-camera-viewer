@@ -33,6 +33,121 @@
 
     const POLL_INTERVAL_MS = 10000;
 
+    // I18N propio -- este archivo es un IIFE separado de camera-viewer.js
+    // (se monta también fuera de la sección del plugin, ver comentario de
+    // BOUND_DEVICE_SOURCES más abajo) y no comparte ámbito con su tr()/lang().
+    const I18N = {
+        es: {
+            liveViewLabel: 'Vista en vivo',
+            operationCouldNotComplete: 'La operación no se pudo completar.',
+            configureTimelapseTitle: 'Configurar timelapse',
+            sourceLabelText: 'Fuente:', lastCaptureLabel: 'Última captura:', boundToLabel: 'Vinculada a:',
+            timelapseLabel: 'Timelapse', intervalLabel: 'Intervalo', durationLabel: 'Duración', fpsLabel: 'FPS',
+            framesLabel: 'Fotogramas', estimatedOutputLabel: 'Est. salida', storageLabel: 'Almacenamiento',
+            pauseLabel: 'Pausar', resumeLabel: 'Reanudar', captureLabel: 'Capturar',
+            recordLabel: 'Grabar', stopLabel: 'Detener',
+            fullscreenLabel: 'Pantalla completa', overlaysLabel: 'Superposiciones',
+            focusLabel: 'Enfoque', motionDetectionLabel: 'Det. movimiento',
+            manualFocusLabel: 'Enfoque manual',
+            recentCapturesLabel: 'Capturas recientes', viewAllBtn: 'Ver todas', noCapturesYet: 'Sin capturas todavía.',
+            captureSaved: 'Captura guardada.',
+            fullscreenNotAllowed: 'El navegador no permitió pantalla completa.',
+            capturesWord: 'Capturas', assembleVideoBtn: 'Armar video', assemblingLabel: 'Armando…',
+            videoAssembled: 'Video armado: {filename}',
+        },
+        en: {
+            liveViewLabel: 'Live view',
+            operationCouldNotComplete: 'The operation could not be completed.',
+            configureTimelapseTitle: 'Configure timelapse',
+            sourceLabelText: 'Source:', lastCaptureLabel: 'Last capture:', boundToLabel: 'Bound to:',
+            timelapseLabel: 'Timelapse', intervalLabel: 'Interval', durationLabel: 'Duration', fpsLabel: 'FPS',
+            framesLabel: 'Frames', estimatedOutputLabel: 'Est. output', storageLabel: 'Storage',
+            pauseLabel: 'Pause', resumeLabel: 'Resume', captureLabel: 'Capture',
+            recordLabel: 'Record', stopLabel: 'Stop',
+            fullscreenLabel: 'Fullscreen', overlaysLabel: 'Overlays',
+            focusLabel: 'Focus', motionDetectionLabel: 'Motion det.',
+            manualFocusLabel: 'Manual focus',
+            recentCapturesLabel: 'Recent captures', viewAllBtn: 'View all', noCapturesYet: 'No captures yet.',
+            captureSaved: 'Capture saved.',
+            fullscreenNotAllowed: 'The browser did not allow fullscreen.',
+            capturesWord: 'Captures', assembleVideoBtn: 'Assemble video', assemblingLabel: 'Assembling…',
+            videoAssembled: 'Video assembled: {filename}',
+        },
+        de: {
+            liveViewLabel: 'Live-Ansicht',
+            operationCouldNotComplete: 'Der Vorgang konnte nicht abgeschlossen werden.',
+            configureTimelapseTitle: 'Zeitraffer konfigurieren',
+            sourceLabelText: 'Quelle:', lastCaptureLabel: 'Letzte Aufnahme:', boundToLabel: 'Verknüpft mit:',
+            timelapseLabel: 'Zeitraffer', intervalLabel: 'Intervall', durationLabel: 'Dauer', fpsLabel: 'FPS',
+            framesLabel: 'Bilder', estimatedOutputLabel: 'Gesch. Ausgabe', storageLabel: 'Speicher',
+            pauseLabel: 'Pause', resumeLabel: 'Fortsetzen', captureLabel: 'Aufnehmen',
+            recordLabel: 'Aufzeichnen', stopLabel: 'Stoppen',
+            fullscreenLabel: 'Vollbild', overlaysLabel: 'Overlays',
+            focusLabel: 'Fokus', motionDetectionLabel: 'Bewegungserk.',
+            manualFocusLabel: 'Manueller Fokus',
+            recentCapturesLabel: 'Letzte Aufnahmen', viewAllBtn: 'Alle anzeigen', noCapturesYet: 'Noch keine Aufnahmen.',
+            captureSaved: 'Aufnahme gespeichert.',
+            fullscreenNotAllowed: 'Der Browser hat den Vollbildmodus nicht zugelassen.',
+            capturesWord: 'Aufnahmen', assembleVideoBtn: 'Video erstellen', assemblingLabel: 'Wird erstellt…',
+            videoAssembled: 'Video erstellt: {filename}',
+        },
+        fr: {
+            liveViewLabel: 'Vue en direct',
+            operationCouldNotComplete: "L'opération n'a pas pu être terminée.",
+            configureTimelapseTitle: 'Configurer le timelapse',
+            sourceLabelText: 'Source :', lastCaptureLabel: 'Dernière capture :', boundToLabel: 'Lié à :',
+            timelapseLabel: 'Timelapse', intervalLabel: 'Intervalle', durationLabel: 'Durée', fpsLabel: 'FPS',
+            framesLabel: 'Images', estimatedOutputLabel: 'Sortie est.', storageLabel: 'Stockage',
+            pauseLabel: 'Pause', resumeLabel: 'Reprendre', captureLabel: 'Capturer',
+            recordLabel: 'Enregistrer', stopLabel: 'Arrêter',
+            fullscreenLabel: 'Plein écran', overlaysLabel: 'Superpositions',
+            focusLabel: 'Mise au point', motionDetectionLabel: 'Détect. mouvement',
+            manualFocusLabel: 'Mise au point manuelle',
+            recentCapturesLabel: 'Captures récentes', viewAllBtn: 'Voir tout', noCapturesYet: 'Aucune capture pour le moment.',
+            captureSaved: 'Capture enregistrée.',
+            fullscreenNotAllowed: "Le navigateur n'a pas autorisé le plein écran.",
+            capturesWord: 'Captures', assembleVideoBtn: 'Assembler la vidéo', assemblingLabel: 'Assemblage…',
+            videoAssembled: 'Vidéo assemblée : {filename}',
+        },
+        'pt-BR': {
+            liveViewLabel: 'Visualização ao vivo',
+            operationCouldNotComplete: 'Não foi possível concluir a operação.',
+            configureTimelapseTitle: 'Configurar timelapse',
+            sourceLabelText: 'Fonte:', lastCaptureLabel: 'Última captura:', boundToLabel: 'Vinculada a:',
+            timelapseLabel: 'Timelapse', intervalLabel: 'Intervalo', durationLabel: 'Duração', fpsLabel: 'FPS',
+            framesLabel: 'Quadros', estimatedOutputLabel: 'Saída est.', storageLabel: 'Armazenamento',
+            pauseLabel: 'Pausar', resumeLabel: 'Retomar', captureLabel: 'Capturar',
+            recordLabel: 'Gravar', stopLabel: 'Parar',
+            fullscreenLabel: 'Tela cheia', overlaysLabel: 'Sobreposições',
+            focusLabel: 'Foco', motionDetectionLabel: 'Det. movimento',
+            manualFocusLabel: 'Foco manual',
+            recentCapturesLabel: 'Capturas recentes', viewAllBtn: 'Ver todas', noCapturesYet: 'Nenhuma captura ainda.',
+            captureSaved: 'Captura salva.',
+            fullscreenNotAllowed: 'O navegador não permitiu a tela cheia.',
+            capturesWord: 'Capturas', assembleVideoBtn: 'Montar vídeo', assemblingLabel: 'Montando…',
+            videoAssembled: 'Vídeo montado: {filename}',
+        },
+    };
+
+    function lang() {
+        let value = document.documentElement.lang || localStorage.getItem('language') || 'es';
+        value = String(value).toLowerCase();
+        if (value.startsWith('pt')) return 'pt-BR';
+        if (I18N[value]) return value;
+        return 'en';
+    }
+
+    function tr(key, vars) {
+        const dict = I18N[lang()] || I18N.en;
+        let text = dict[key] ?? I18N.en[key] ?? key;
+        if (vars) {
+            Object.entries(vars).forEach(([name, value]) => {
+                text = text.replace(`{${name}}`, value);
+            });
+        }
+        return text;
+    }
+
     const icon = (body, size = 16) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
     const ICON_CAMERA = icon('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>', 16);
     const ICON_SETTINGS = icon('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>', 16);
@@ -53,7 +168,7 @@
     async function api(url, options = {}) {
         const response = await fetch(url, options);
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.detail || 'La operación no se pudo completar.');
+        if (!response.ok) throw new Error(data.detail || tr('operationCouldNotComplete'));
         return data;
     }
 
@@ -168,55 +283,55 @@
                         <strong>${esc(camera.name)}</strong>
                         <span class="cam-status-pill"><span class="cam-status-dot"></span><span class="cam-status-text"></span></span>
                     </div>
-                    <button type="button" class="cam-icon-btn" data-cam-action="settings" title="Configurar timelapse">${ICON_SETTINGS}</button>
+                    <button type="button" class="cam-icon-btn" data-cam-action="settings" title="${tr('configureTimelapseTitle')}">${ICON_SETTINGS}</button>
                 </div>
                 <div class="cam-card-meta">
-                    <span>Fuente: <strong>${esc(sourceLabel(camera))}</strong></span>
-                    <span>Última captura: <strong data-cam-field="last-capture">--</strong></span>
-                    ${camera.bound_device ? `<span>Vinculada a: <strong data-cam-field="bound-device">--</strong></span>` : ''}
+                    <span>${tr('sourceLabelText')} <strong>${esc(sourceLabel(camera))}</strong></span>
+                    <span>${tr('lastCaptureLabel')} <strong data-cam-field="last-capture">--</strong></span>
+                    ${camera.bound_device ? `<span>${tr('boundToLabel')} <strong data-cam-field="bound-device">--</strong></span>` : ''}
                 </div>
 
                 <div class="cam-timelapse-row">
                     <div class="cam-timelapse-header">
-                        <span>Timelapse</span>
+                        <span>${tr('timelapseLabel')}</span>
                         <label class="cam-toggle">
                             <input type="checkbox" data-cam-action="toggle-enabled">
                             <span class="cam-toggle-slider"></span>
                         </label>
                     </div>
                     <div class="cam-stat-grid">
-                        <div class="cam-stat"><span>Intervalo</span><strong data-cam-field="interval">-- s</strong></div>
-                        <div class="cam-stat"><span>Duración</span><strong data-cam-field="duration">--</strong></div>
-                        <div class="cam-stat"><span>FPS</span><strong data-cam-field="fps">--</strong></div>
+                        <div class="cam-stat"><span>${tr('intervalLabel')}</span><strong data-cam-field="interval">-- s</strong></div>
+                        <div class="cam-stat"><span>${tr('durationLabel')}</span><strong data-cam-field="duration">--</strong></div>
+                        <div class="cam-stat"><span>${tr('fpsLabel')}</span><strong data-cam-field="fps">--</strong></div>
                     </div>
                     <div class="cam-stat-grid">
-                        <div class="cam-stat"><span>Fotogramas</span><strong data-cam-field="frame-count">--</strong></div>
-                        <div class="cam-stat"><span>Est. salida</span><strong data-cam-field="estimated-output">--</strong></div>
-                        <div class="cam-stat"><span>Almacenamiento</span><strong data-cam-field="storage">--</strong></div>
+                        <div class="cam-stat"><span>${tr('framesLabel')}</span><strong data-cam-field="frame-count">--</strong></div>
+                        <div class="cam-stat"><span>${tr('estimatedOutputLabel')}</span><strong data-cam-field="estimated-output">--</strong></div>
+                        <div class="cam-stat"><span>${tr('storageLabel')}</span><strong data-cam-field="storage">--</strong></div>
                     </div>
                 </div>
 
                 <div class="cam-actions-row">
-                    <button type="button" class="cam-btn" data-cam-action="pause" disabled>${ICON_PAUSE}<span data-cam-field="pause-label">Pausar</span></button>
-                    <button type="button" class="cam-btn" data-cam-action="capture">${ICON_CAPTURE}<span>Capturar</span></button>
-                    <button type="button" class="cam-btn cam-btn-danger" data-cam-action="record">${ICON_RECORD}<span data-cam-field="record-label">Grabar</span></button>
+                    <button type="button" class="cam-btn" data-cam-action="pause" data-cam-paused="false" disabled>${ICON_PAUSE}<span data-cam-field="pause-label">${tr('pauseLabel')}</span></button>
+                    <button type="button" class="cam-btn" data-cam-action="capture">${ICON_CAPTURE}<span>${tr('captureLabel')}</span></button>
+                    <button type="button" class="cam-btn cam-btn-danger" data-cam-action="record" data-cam-recording="false">${ICON_RECORD}<span data-cam-field="record-label">${tr('recordLabel')}</span></button>
                 </div>
 
                 <div class="cam-toggles-row">
-                    <button type="button" class="cam-mini-btn" data-cam-action="fullscreen">${ICON_EXPAND}<span>Pantalla completa</span></button>
-                    <button type="button" class="cam-mini-btn" data-cam-action="toggle-overlay">${ICON_OVERLAY}<span>Superposiciones</span></button>
-                    <button type="button" class="cam-mini-btn" data-cam-action="toggle-focus" data-cam-focus-btn hidden>${ICON_FOCUS}<span>Enfoque</span></button>
-                    <button type="button" class="cam-mini-btn" data-cam-action="toggle-motion">${ICON_MOTION}<span>Det. movimiento</span></button>
+                    <button type="button" class="cam-mini-btn" data-cam-action="fullscreen">${ICON_EXPAND}<span>${tr('fullscreenLabel')}</span></button>
+                    <button type="button" class="cam-mini-btn" data-cam-action="toggle-overlay">${ICON_OVERLAY}<span>${tr('overlaysLabel')}</span></button>
+                    <button type="button" class="cam-mini-btn" data-cam-action="toggle-focus" data-cam-focus-btn hidden>${ICON_FOCUS}<span>${tr('focusLabel')}</span></button>
+                    <button type="button" class="cam-mini-btn" data-cam-action="toggle-motion">${ICON_MOTION}<span>${tr('motionDetectionLabel')}</span></button>
                 </div>
 
                 <div class="cam-focus-popover" data-cam-focus-popover hidden>
-                    <span>Enfoque manual</span>
+                    <span>${tr('manualFocusLabel')}</span>
                     <input type="range" data-cam-field="focus-slider">
                     <span data-cam-field="focus-value">--</span>
                 </div>
 
                 <div class="cam-live-section">
-                    <span class="cam-live-label">Vista en vivo</span>
+                    <span class="cam-live-label">${tr('liveViewLabel')}</span>
                     <div class="cam-live-wrap">
                         <img class="cam-live-img" src="${esc(camera.stream_url)}" alt="${esc(camera.name)}" loading="lazy">
                         <span class="cam-live-badge">LIVE</span>
@@ -225,8 +340,8 @@
 
                 <div class="cam-captures-section">
                     <div class="cam-captures-header">
-                        <span>Capturas recientes</span>
-                        <button type="button" class="cam-see-all-btn" data-cam-action="view-all">Ver todas</button>
+                        <span>${tr('recentCapturesLabel')}</span>
+                        <button type="button" class="cam-see-all-btn" data-cam-action="view-all">${tr('viewAllBtn')}</button>
                     </div>
                     <div class="cam-captures-grid" data-cam-field="captures-grid"></div>
                 </div>
@@ -291,10 +406,14 @@
                 const pauseBtn = cardEl.querySelector('[data-cam-action="pause"]');
                 if (pauseBtn) {
                     pauseBtn.disabled = !stats.enabled;
-                    pauseBtn.innerHTML = stats.paused ? `${ICON_PLAY}<span data-cam-field="pause-label">Reanudar</span>` : `${ICON_PAUSE}<span data-cam-field="pause-label">Pausar</span>`;
+                    pauseBtn.dataset.camPaused = stats.paused ? 'true' : 'false';
+                    pauseBtn.innerHTML = stats.paused ? `${ICON_PLAY}<span data-cam-field="pause-label">${tr('resumeLabel')}</span>` : `${ICON_PAUSE}<span data-cam-field="pause-label">${tr('pauseLabel')}</span>`;
                 }
                 const recordBtn = cardEl.querySelector('[data-cam-action="record"]');
-                if (recordBtn) recordBtn.innerHTML = stats.recording ? `${ICON_STOP}<span data-cam-field="record-label">Detener</span>` : `${ICON_RECORD}<span data-cam-field="record-label">Grabar</span>`;
+                if (recordBtn) {
+                    recordBtn.dataset.camRecording = stats.recording ? 'true' : 'false';
+                    recordBtn.innerHTML = stats.recording ? `${ICON_STOP}<span data-cam-field="record-label">${tr('stopLabel')}</span>` : `${ICON_RECORD}<span data-cam-field="record-label">${tr('recordLabel')}</span>`;
+                }
                 cardEl.querySelector('[data-cam-action="toggle-overlay"]')?.classList.toggle('active', !!stats.overlay);
                 cardEl.querySelector('[data-cam-action="toggle-motion"]')?.classList.toggle('active', !!stats.motion_detection);
             } catch (error) {
@@ -310,7 +429,7 @@
                     grid.innerHTML = captures.map(c => `
                         <div class="cam-capture-thumb">
                             <img src="/api/cameras/${esc(camera.id)}/captures/${esc(c.filename)}" alt="" loading="lazy">
-                        </div>`).join('') || '<p class="cam-empty">Sin capturas todavía.</p>';
+                        </div>`).join('') || `<p class="cam-empty">${tr('noCapturesYet')}</p>`;
                 }
                 if (field('last-capture') && captures.length) field('last-capture').textContent = formatClock(captures[0].timestamp);
             } catch (error) {
@@ -348,15 +467,14 @@
                     if (action === 'capture') {
                         btn.disabled = true;
                         await api(`/api/cameras/${camera.id}/capture`, { method: 'POST' });
-                        toast('Captura guardada.');
+                        toast(tr('captureSaved'));
                         await refreshStats();
                     } else if (action === 'pause') {
-                        const label = btn.querySelector('[data-cam-field="pause-label"]')?.textContent;
-                        const endpoint = label === 'Reanudar' ? 'resume' : 'pause';
+                        const endpoint = btn.dataset.camPaused === 'true' ? 'resume' : 'pause';
                         await api(`/api/cameras/${camera.id}/timelapse/${endpoint}`, { method: 'POST' });
                         await refreshStats();
                     } else if (action === 'record') {
-                        const isStopping = btn.querySelector('[data-cam-field="record-label"]')?.textContent === 'Detener';
+                        const isStopping = btn.dataset.camRecording === 'true';
                         await api(`/api/cameras/${camera.id}/record/${isStopping ? 'stop' : 'start'}`, { method: 'POST' });
                         await refreshStats();
                     } else if (action === 'toggle-overlay') {
@@ -367,7 +485,7 @@
                         cardEl.querySelector('[data-cam-focus-popover]')?.toggleAttribute('hidden');
                     } else if (action === 'fullscreen') {
                         const img = cardEl.querySelector('.cam-live-img');
-                        img?.requestFullscreen?.().catch(() => toast('El navegador no permitió pantalla completa.', 'error'));
+                        img?.requestFullscreen?.().catch(() => toast(tr('fullscreenNotAllowed'), 'error'));
                     } else if (action === 'settings') {
                         // Por default manda a la sección del plugin (donde vive
                         // el editor de nombre/propósito/vínculo) -- si el
@@ -416,9 +534,9 @@
                 <div class="cam-gallery-backdrop"></div>
                 <div class="cam-gallery-dialog">
                     <div class="cam-gallery-header">
-                        <strong>${esc(camera.name)} · Capturas</strong>
+                        <strong>${esc(camera.name)} · ${esc(tr('capturesWord'))}</strong>
                         <div class="cam-gallery-header-actions">
-                            <button type="button" class="cam-btn cam-btn-accent" data-cam-assemble>Armar video</button>
+                            <button type="button" class="cam-btn cam-btn-accent" data-cam-assemble>${tr('assembleVideoBtn')}</button>
                             <button type="button" class="cam-icon-btn" data-cam-gallery-close>${ICON_CLOSE}</button>
                         </div>
                     </div>
@@ -431,15 +549,15 @@
             overlay.querySelector('[data-cam-assemble]').addEventListener('click', async event => {
                 const assembleBtn = event.currentTarget;
                 assembleBtn.disabled = true;
-                assembleBtn.textContent = 'Armando…';
+                assembleBtn.textContent = tr('assemblingLabel');
                 try {
                     const result = await api(`/api/cameras/${camera.id}/timelapse/assemble`, { method: 'POST' });
-                    toast(`Video armado: ${result.filename}`);
+                    toast(tr('videoAssembled', { filename: result.filename }));
                 } catch (error) {
                     toast(error.message, 'error');
                 } finally {
                     assembleBtn.disabled = false;
-                    assembleBtn.textContent = 'Armar video';
+                    assembleBtn.textContent = tr('assembleVideoBtn');
                 }
             });
             try {
@@ -450,7 +568,7 @@
                     <a class="cam-gallery-thumb" href="/api/cameras/${esc(camera.id)}/captures/${esc(c.filename)}" target="_blank" rel="noopener">
                         <img src="/api/cameras/${esc(camera.id)}/captures/${esc(c.filename)}" alt="" loading="lazy">
                         <span>${esc(formatClock(c.timestamp))}</span>
-                    </a>`).join('') || '<p class="cam-empty">Sin capturas todavía.</p>';
+                    </a>`).join('') || `<p class="cam-empty">${tr('noCapturesYet')}</p>`;
             } catch (error) {
                 toast(error.message, 'error');
             }

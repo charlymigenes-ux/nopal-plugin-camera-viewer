@@ -1,6 +1,259 @@
 (() => {
     const PLUGIN_ID = 'camera-viewer';
+    const PLUGIN_VERSION = '1.4.0';
     if (window.NopalPluginRegistry?.[PLUGIN_ID]) return;
+
+    const I18N = {
+        es: {
+            operationCouldNotComplete: 'La operación no se pudo completar.',
+            cameraAdded: '{name}: cámara agregada.',
+            connectingLabel: 'Conectando…', searchingPortLabel: 'Buscando puerto…',
+            onvifNeedHostOrUrl: 'Indicá la IP de la cámara o la URL completa del servicio ONVIF.',
+            confirmRemoveCamera: '¿Eliminar "{name}"? Solo se quita del registro de NOPAL, la cámara y su stream no se ven afectados.',
+            removeCameraTitle: 'Eliminar cámara',
+            brandBambu: 'Bambu Lab', brandElegoo: 'Elegoo', brandFlashforge: 'FlashForge', brandMarlin: 'Marlin',
+            brandKlipper: 'Klipper', brandLaserCnc: 'Láser/CNC', brandCnc: 'CNC', brandLaser: 'Láser',
+            searchingWebcams: 'Buscando webcams conectadas…',
+            noWebcamDetected: 'No se detectó ninguna webcam USB. Conectala y tocá "Buscar de nuevo".',
+            alreadyRegisteredBadge: 'Ya registrada',
+            whatDeviceToFilm: '¿Qué dispositivo vas a filmar?',
+            loadingDevicesOption: 'Cargando dispositivos…', chooseDeviceOption: 'Elegí un dispositivo',
+            timelapseNotImplementedHint: 'La captura automática de frames durante la impresión y el armado del video todavía no están implementados -- por ahora esto solo guarda la asociación para cuando esa función esté lista.',
+            whatWillYouUseItFor: '¿Para qué la vas a usar?', exampleWatchWorkshop: 'Ej. vigilar el taller',
+            nameLabel: 'Nombre',
+            purposeMonitoring: 'Monitoreo general', purposeMonitoringDesc: 'Supervisión en tiempo real',
+            purposeTimelapse: 'Timelapse de un dispositivo', purposeTimelapseDesc: 'Captura en intervalos',
+            purposeOther: 'Otra función', purposeOtherDesc: 'Uso personalizado',
+            whatForUpper: '¿PARA QUÉ LA VAS A USAR?', whatDeviceUpper: '¿QUÉ DISPOSITIVO VAS A FILMAR?',
+            intervalSecondsUpper: 'INTERVALO (SEGUNDOS)', timeBetweenCaptures: 'Tiempo entre cada captura.',
+            fpsFinalVideoUpper: 'FPS DEL VIDEO FINAL', framesPerSecondHint: 'Cuadros por segundo del video generado.',
+            infoUpper: 'INFORMACIÓN',
+            timelapseInfoText: 'El timelapse capturará imágenes a intervalos definidos y generará un video con la velocidad seleccionada.',
+            cameraUpdated: '{name}: cámara actualizada.',
+            loadingEllipsis: 'Cargando…', noCamerasYet: 'Todavía no agregaste ninguna cámara.',
+            pageTitle: 'Cámaras', layout1PerRow: '1 por fila', layout2PerRow: '2 por fila', layout3PerRow: '3 por fila',
+            addCameraBtn: 'Agregar cámara', addCameraTitle: 'Agregar cámara',
+            addCameraHint: 'Un stream MJPEG directo, o resolvela sola por ONVIF (recomendado si tu cámara lo soporta: no hace falta saber el formato de URL RTSP).',
+            tabUrlDirect: 'URL directa', tabOnvif: 'ONVIF', tabUsb: 'USB',
+            streamUrlLabel: 'URL del stream',
+            streamUrlPlaceholder: 'http://192.168.1.50:8080/stream  o  rtsp://usuario:clave@192.168.1.50:554/...',
+            exampleCameraBed: 'Ej. Cámara cama',
+            cancelBtn: 'Cancelar', addBtn: 'Agregar',
+            cameraIpLabel: 'IP de la cámara', onvifPortLabel: 'Puerto ONVIF',
+            onvifPortHint: '(opcional: si no lo sabés, lo buscamos solos)',
+            autoDetectPlaceholder: 'Dejalo vacío para autodetectar',
+            onvifOrDivider: '— o, si tu cámara no usa el path estándar —',
+            onvifFullUrlLabel: 'URL completa del servicio ONVIF', onvifFullUrlHint: '(reemplaza IP + puerto)',
+            usernameLabel: 'Usuario', passwordLabel: 'Contraseña', connectBtn: 'Conectar',
+            webcamsDetected: 'Webcams detectadas', searchAgainTitle: 'Buscar de nuevo',
+            configureCameraTitle: 'Configurar cámara', configureCameraSubtitle: 'Define el propósito y la captura de tu cámara.',
+            cameraNameUpper: 'NOMBRE DE LA CÁMARA', nameHelpsIdentify: 'Este nombre te ayudará a identificarla fácilmente.',
+            deleteCameraLabel: 'Eliminar cámara', saveBtn: 'Guardar',
+        },
+        en: {
+            operationCouldNotComplete: 'The operation could not be completed.',
+            cameraAdded: '{name}: camera added.',
+            connectingLabel: 'Connecting…', searchingPortLabel: 'Searching for port…',
+            onvifNeedHostOrUrl: 'Enter the camera IP or the full ONVIF service URL.',
+            confirmRemoveCamera: 'Delete "{name}"? This only removes it from the NOPAL registry, the camera and its stream are not affected.',
+            removeCameraTitle: 'Delete camera',
+            brandBambu: 'Bambu Lab', brandElegoo: 'Elegoo', brandFlashforge: 'FlashForge', brandMarlin: 'Marlin',
+            brandKlipper: 'Klipper', brandLaserCnc: 'Laser/CNC', brandCnc: 'CNC', brandLaser: 'Laser',
+            searchingWebcams: 'Searching for connected webcams…',
+            noWebcamDetected: 'No USB webcam was detected. Connect it and tap "Search again".',
+            alreadyRegisteredBadge: 'Already registered',
+            whatDeviceToFilm: 'Which device are you going to film?',
+            loadingDevicesOption: 'Loading devices…', chooseDeviceOption: 'Choose a device',
+            timelapseNotImplementedHint: 'Automatic frame capture during printing and video assembly are not implemented yet -- for now this only saves the association for when that feature is ready.',
+            whatWillYouUseItFor: 'What will you use it for?', exampleWatchWorkshop: 'E.g. watch the workshop',
+            nameLabel: 'Name',
+            purposeMonitoring: 'General monitoring', purposeMonitoringDesc: 'Real-time monitoring',
+            purposeTimelapse: 'Timelapse of a device', purposeTimelapseDesc: 'Interval capture',
+            purposeOther: 'Other purpose', purposeOtherDesc: 'Custom use',
+            whatForUpper: 'WHAT WILL YOU USE IT FOR?', whatDeviceUpper: 'WHICH DEVICE ARE YOU GOING TO FILM?',
+            intervalSecondsUpper: 'INTERVAL (SECONDS)', timeBetweenCaptures: 'Time between each capture.',
+            fpsFinalVideoUpper: 'FINAL VIDEO FPS', framesPerSecondHint: 'Frames per second of the generated video.',
+            infoUpper: 'INFORMATION',
+            timelapseInfoText: 'The timelapse will capture images at set intervals and generate a video at the selected speed.',
+            cameraUpdated: '{name}: camera updated.',
+            loadingEllipsis: 'Loading…', noCamerasYet: "You haven't added any camera yet.",
+            pageTitle: 'Cameras', layout1PerRow: '1 per row', layout2PerRow: '2 per row', layout3PerRow: '3 per row',
+            addCameraBtn: 'Add camera', addCameraTitle: 'Add camera',
+            addCameraHint: 'A direct MJPEG stream, or resolve it automatically via ONVIF (recommended if your camera supports it: no need to know the RTSP URL format).',
+            tabUrlDirect: 'Direct URL', tabOnvif: 'ONVIF', tabUsb: 'USB',
+            streamUrlLabel: 'Stream URL',
+            streamUrlPlaceholder: 'http://192.168.1.50:8080/stream  or  rtsp://user:password@192.168.1.50:554/...',
+            exampleCameraBed: 'E.g. Bed camera',
+            cancelBtn: 'Cancel', addBtn: 'Add',
+            cameraIpLabel: 'Camera IP', onvifPortLabel: 'ONVIF port',
+            onvifPortHint: "(optional: if you don't know it, we'll look for it)",
+            autoDetectPlaceholder: 'Leave empty to auto-detect',
+            onvifOrDivider: '— or, if your camera does not use the standard path —',
+            onvifFullUrlLabel: 'Full ONVIF service URL', onvifFullUrlHint: '(replaces IP + port)',
+            usernameLabel: 'Username', passwordLabel: 'Password', connectBtn: 'Connect',
+            webcamsDetected: 'Webcams detected', searchAgainTitle: 'Search again',
+            configureCameraTitle: 'Configure camera', configureCameraSubtitle: 'Define the purpose and capture settings of your camera.',
+            cameraNameUpper: 'CAMERA NAME', nameHelpsIdentify: 'This name will help you identify it easily.',
+            deleteCameraLabel: 'Delete camera', saveBtn: 'Save',
+        },
+        de: {
+            operationCouldNotComplete: 'Der Vorgang konnte nicht abgeschlossen werden.',
+            cameraAdded: '{name}: Kamera hinzugefügt.',
+            connectingLabel: 'Verbinden…', searchingPortLabel: 'Port wird gesucht…',
+            onvifNeedHostOrUrl: 'Gib die Kamera-IP oder die vollständige ONVIF-Dienst-URL ein.',
+            confirmRemoveCamera: '"{name}" löschen? Sie wird nur aus der NOPAL-Registrierung entfernt, die Kamera und ihr Stream sind nicht betroffen.',
+            removeCameraTitle: 'Kamera löschen',
+            brandBambu: 'Bambu Lab', brandElegoo: 'Elegoo', brandFlashforge: 'FlashForge', brandMarlin: 'Marlin',
+            brandKlipper: 'Klipper', brandLaserCnc: 'Laser/CNC', brandCnc: 'CNC', brandLaser: 'Laser',
+            searchingWebcams: 'Verbundene Webcams werden gesucht…',
+            noWebcamDetected: 'Keine USB-Webcam erkannt. Schließe sie an und tippe auf "Erneut suchen".',
+            alreadyRegisteredBadge: 'Bereits registriert',
+            whatDeviceToFilm: 'Welches Gerät möchtest du filmen?',
+            loadingDevicesOption: 'Geräte werden geladen…', chooseDeviceOption: 'Gerät auswählen',
+            timelapseNotImplementedHint: 'Die automatische Bilderfassung während des Drucks und die Videoerstellung sind noch nicht implementiert -- vorerst wird nur die Zuordnung gespeichert, bis diese Funktion bereit ist.',
+            whatWillYouUseItFor: 'Wofür wirst du sie verwenden?', exampleWatchWorkshop: 'z. B. Werkstatt überwachen',
+            nameLabel: 'Name',
+            purposeMonitoring: 'Allgemeine Überwachung', purposeMonitoringDesc: 'Überwachung in Echtzeit',
+            purposeTimelapse: 'Zeitraffer eines Geräts', purposeTimelapseDesc: 'Aufnahme in Intervallen',
+            purposeOther: 'Andere Funktion', purposeOtherDesc: 'Benutzerdefinierte Verwendung',
+            whatForUpper: 'WOFÜR WIRST DU SIE VERWENDEN?', whatDeviceUpper: 'WELCHES GERÄT MÖCHTEST DU FILMEN?',
+            intervalSecondsUpper: 'INTERVALL (SEKUNDEN)', timeBetweenCaptures: 'Zeit zwischen den Aufnahmen.',
+            fpsFinalVideoUpper: 'FPS DES ENDVIDEOS', framesPerSecondHint: 'Bilder pro Sekunde des erzeugten Videos.',
+            infoUpper: 'INFORMATION',
+            timelapseInfoText: 'Der Zeitraffer erfasst Bilder in festgelegten Intervallen und erzeugt ein Video mit der gewählten Geschwindigkeit.',
+            cameraUpdated: '{name}: Kamera aktualisiert.',
+            loadingEllipsis: 'Wird geladen…', noCamerasYet: 'Du hast noch keine Kamera hinzugefügt.',
+            pageTitle: 'Kameras', layout1PerRow: '1 pro Zeile', layout2PerRow: '2 pro Zeile', layout3PerRow: '3 pro Zeile',
+            addCameraBtn: 'Kamera hinzufügen', addCameraTitle: 'Kamera hinzufügen',
+            addCameraHint: 'Ein direkter MJPEG-Stream, oder automatisch per ONVIF auflösen (empfohlen, falls deine Kamera das unterstützt: das RTSP-URL-Format muss dann nicht bekannt sein).',
+            tabUrlDirect: 'Direkte URL', tabOnvif: 'ONVIF', tabUsb: 'USB',
+            streamUrlLabel: 'Stream-URL',
+            streamUrlPlaceholder: 'http://192.168.1.50:8080/stream  oder  rtsp://benutzer:passwort@192.168.1.50:554/...',
+            exampleCameraBed: 'z. B. Bett-Kamera',
+            cancelBtn: 'Abbrechen', addBtn: 'Hinzufügen',
+            cameraIpLabel: 'Kamera-IP', onvifPortLabel: 'ONVIF-Port',
+            onvifPortHint: '(optional: falls unbekannt, suchen wir ihn automatisch)',
+            autoDetectPlaceholder: 'Leer lassen für automatische Erkennung',
+            onvifOrDivider: '— oder, falls deine Kamera nicht den Standardpfad verwendet —',
+            onvifFullUrlLabel: 'Vollständige ONVIF-Dienst-URL', onvifFullUrlHint: '(ersetzt IP + Port)',
+            usernameLabel: 'Benutzername', passwordLabel: 'Passwort', connectBtn: 'Verbinden',
+            webcamsDetected: 'Erkannte Webcams', searchAgainTitle: 'Erneut suchen',
+            configureCameraTitle: 'Kamera konfigurieren', configureCameraSubtitle: 'Lege den Zweck und die Aufnahmeeinstellungen deiner Kamera fest.',
+            cameraNameUpper: 'KAMERANAME', nameHelpsIdentify: 'Dieser Name hilft dir, sie leicht zu identifizieren.',
+            deleteCameraLabel: 'Kamera löschen', saveBtn: 'Speichern',
+        },
+        fr: {
+            operationCouldNotComplete: "L'opération n'a pas pu être terminée.",
+            cameraAdded: '{name} : caméra ajoutée.',
+            connectingLabel: 'Connexion…', searchingPortLabel: 'Recherche du port…',
+            onvifNeedHostOrUrl: "Indiquez l'IP de la caméra ou l'URL complète du service ONVIF.",
+            confirmRemoveCamera: 'Supprimer "{name}" ? Cela ne fait que la retirer du registre NOPAL, la caméra et son flux ne sont pas affectés.',
+            removeCameraTitle: 'Supprimer la caméra',
+            brandBambu: 'Bambu Lab', brandElegoo: 'Elegoo', brandFlashforge: 'FlashForge', brandMarlin: 'Marlin',
+            brandKlipper: 'Klipper', brandLaserCnc: 'Laser/CNC', brandCnc: 'CNC', brandLaser: 'Laser',
+            searchingWebcams: 'Recherche des webcams connectées…',
+            noWebcamDetected: 'Aucune webcam USB détectée. Connectez-la et appuyez sur "Rechercher à nouveau".',
+            alreadyRegisteredBadge: 'Déjà enregistrée',
+            whatDeviceToFilm: 'Quel appareil allez-vous filmer ?',
+            loadingDevicesOption: 'Chargement des appareils…', chooseDeviceOption: 'Choisissez un appareil',
+            timelapseNotImplementedHint: "La capture automatique d'images pendant l'impression et l'assemblage vidéo ne sont pas encore implémentés -- pour l'instant, cela enregistre uniquement l'association en attendant que cette fonction soit prête.",
+            whatWillYouUseItFor: 'À quoi allez-vous l\'utiliser ?', exampleWatchWorkshop: 'Ex. surveiller l\'atelier',
+            nameLabel: 'Nom',
+            purposeMonitoring: 'Surveillance générale', purposeMonitoringDesc: 'Supervision en temps réel',
+            purposeTimelapse: "Timelapse d'un appareil", purposeTimelapseDesc: 'Capture par intervalles',
+            purposeOther: 'Autre fonction', purposeOtherDesc: 'Usage personnalisé',
+            whatForUpper: "À QUOI ALLEZ-VOUS L'UTILISER ?", whatDeviceUpper: 'QUEL APPAREIL ALLEZ-VOUS FILMER ?',
+            intervalSecondsUpper: 'INTERVALLE (SECONDES)', timeBetweenCaptures: 'Temps entre chaque capture.',
+            fpsFinalVideoUpper: 'FPS DE LA VIDÉO FINALE', framesPerSecondHint: 'Images par seconde de la vidéo générée.',
+            infoUpper: 'INFORMATION',
+            timelapseInfoText: 'Le timelapse capturera des images à intervalles définis et générera une vidéo à la vitesse sélectionnée.',
+            cameraUpdated: '{name} : caméra mise à jour.',
+            loadingEllipsis: 'Chargement…', noCamerasYet: "Vous n'avez encore ajouté aucune caméra.",
+            pageTitle: 'Caméras', layout1PerRow: '1 par ligne', layout2PerRow: '2 par ligne', layout3PerRow: '3 par ligne',
+            addCameraBtn: 'Ajouter une caméra', addCameraTitle: 'Ajouter une caméra',
+            addCameraHint: "Un flux MJPEG direct, ou résolvez-le automatiquement via ONVIF (recommandé si votre caméra le prend en charge : pas besoin de connaître le format d'URL RTSP).",
+            tabUrlDirect: 'URL directe', tabOnvif: 'ONVIF', tabUsb: 'USB',
+            streamUrlLabel: 'URL du flux',
+            streamUrlPlaceholder: 'http://192.168.1.50:8080/stream  ou  rtsp://utilisateur:motdepasse@192.168.1.50:554/...',
+            exampleCameraBed: 'Ex. Caméra du lit',
+            cancelBtn: 'Annuler', addBtn: 'Ajouter',
+            cameraIpLabel: 'IP de la caméra', onvifPortLabel: 'Port ONVIF',
+            onvifPortHint: '(facultatif : si vous ne le connaissez pas, nous le chercherons)',
+            autoDetectPlaceholder: 'Laissez vide pour la détection automatique',
+            onvifOrDivider: "— ou, si votre caméra n'utilise pas le chemin standard —",
+            onvifFullUrlLabel: 'URL complète du service ONVIF', onvifFullUrlHint: '(remplace IP + port)',
+            usernameLabel: 'Utilisateur', passwordLabel: 'Mot de passe', connectBtn: 'Connecter',
+            webcamsDetected: 'Webcams détectées', searchAgainTitle: 'Rechercher à nouveau',
+            configureCameraTitle: 'Configurer la caméra', configureCameraSubtitle: 'Définissez la finalité et la capture de votre caméra.',
+            cameraNameUpper: 'NOM DE LA CAMÉRA', nameHelpsIdentify: "Ce nom vous aidera à l'identifier facilement.",
+            deleteCameraLabel: 'Supprimer la caméra', saveBtn: 'Enregistrer',
+        },
+        'pt-BR': {
+            operationCouldNotComplete: 'Não foi possível concluir a operação.',
+            cameraAdded: '{name}: câmera adicionada.',
+            connectingLabel: 'Conectando…', searchingPortLabel: 'Procurando porta…',
+            onvifNeedHostOrUrl: 'Informe o IP da câmera ou a URL completa do serviço ONVIF.',
+            confirmRemoveCamera: 'Excluir "{name}"? Isso apenas a remove do registro do NOPAL, a câmera e seu stream não são afetados.',
+            removeCameraTitle: 'Excluir câmera',
+            brandBambu: 'Bambu Lab', brandElegoo: 'Elegoo', brandFlashforge: 'FlashForge', brandMarlin: 'Marlin',
+            brandKlipper: 'Klipper', brandLaserCnc: 'Laser/CNC', brandCnc: 'CNC', brandLaser: 'Laser',
+            searchingWebcams: 'Procurando webcams conectadas…',
+            noWebcamDetected: 'Nenhuma webcam USB detectada. Conecte-a e toque em "Buscar novamente".',
+            alreadyRegisteredBadge: 'Já registrada',
+            whatDeviceToFilm: 'Qual dispositivo você vai filmar?',
+            loadingDevicesOption: 'Carregando dispositivos…', chooseDeviceOption: 'Escolha um dispositivo',
+            timelapseNotImplementedHint: 'A captura automática de quadros durante a impressão e a montagem do vídeo ainda não foram implementadas -- por enquanto isso só salva a associação para quando esse recurso estiver pronto.',
+            whatWillYouUseItFor: 'Para que você vai usá-la?', exampleWatchWorkshop: 'Ex. monitorar a oficina',
+            nameLabel: 'Nome',
+            purposeMonitoring: 'Monitoramento geral', purposeMonitoringDesc: 'Supervisão em tempo real',
+            purposeTimelapse: 'Timelapse de um dispositivo', purposeTimelapseDesc: 'Captura em intervalos',
+            purposeOther: 'Outra função', purposeOtherDesc: 'Uso personalizado',
+            whatForUpper: 'PARA QUE VOCÊ VAI USÁ-LA?', whatDeviceUpper: 'QUAL DISPOSITIVO VOCÊ VAI FILMAR?',
+            intervalSecondsUpper: 'INTERVALO (SEGUNDOS)', timeBetweenCaptures: 'Tempo entre cada captura.',
+            fpsFinalVideoUpper: 'FPS DO VÍDEO FINAL', framesPerSecondHint: 'Quadros por segundo do vídeo gerado.',
+            infoUpper: 'INFORMAÇÃO',
+            timelapseInfoText: 'O timelapse capturará imagens em intervalos definidos e gerará um vídeo na velocidade selecionada.',
+            cameraUpdated: '{name}: câmera atualizada.',
+            loadingEllipsis: 'Carregando…', noCamerasYet: 'Você ainda não adicionou nenhuma câmera.',
+            pageTitle: 'Câmeras', layout1PerRow: '1 por linha', layout2PerRow: '2 por linha', layout3PerRow: '3 por linha',
+            addCameraBtn: 'Adicionar câmera', addCameraTitle: 'Adicionar câmera',
+            addCameraHint: 'Um stream MJPEG direto, ou resolva automaticamente via ONVIF (recomendado se sua câmera suportar: não é preciso saber o formato da URL RTSP).',
+            tabUrlDirect: 'URL direta', tabOnvif: 'ONVIF', tabUsb: 'USB',
+            streamUrlLabel: 'URL do stream',
+            streamUrlPlaceholder: 'http://192.168.1.50:8080/stream  ou  rtsp://usuario:senha@192.168.1.50:554/...',
+            exampleCameraBed: 'Ex. Câmera da mesa',
+            cancelBtn: 'Cancelar', addBtn: 'Adicionar',
+            cameraIpLabel: 'IP da câmera', onvifPortLabel: 'Porta ONVIF',
+            onvifPortHint: '(opcional: se não souber, nós procuramos automaticamente)',
+            autoDetectPlaceholder: 'Deixe em branco para detectar automaticamente',
+            onvifOrDivider: '— ou, se sua câmera não usar o caminho padrão —',
+            onvifFullUrlLabel: 'URL completa do serviço ONVIF', onvifFullUrlHint: '(substitui IP + porta)',
+            usernameLabel: 'Usuário', passwordLabel: 'Senha', connectBtn: 'Conectar',
+            webcamsDetected: 'Webcams detectadas', searchAgainTitle: 'Buscar novamente',
+            configureCameraTitle: 'Configurar câmera', configureCameraSubtitle: 'Defina o propósito e a captura da sua câmera.',
+            cameraNameUpper: 'NOME DA CÂMERA', nameHelpsIdentify: 'Esse nome vai te ajudar a identificá-la facilmente.',
+            deleteCameraLabel: 'Excluir câmera', saveBtn: 'Salvar',
+        },
+    };
+
+    function lang() {
+        let value = document.documentElement.lang || localStorage.getItem('language') || 'es';
+        value = String(value).toLowerCase();
+        if (value.startsWith('pt')) return 'pt-BR';
+        if (I18N[value]) return value;
+        return 'en';
+    }
+
+    function tr(key, vars) {
+        const dict = I18N[lang()] || I18N.en;
+        let text = dict[key] ?? I18N.en[key] ?? key;
+        if (vars) {
+            Object.entries(vars).forEach(([name, value]) => {
+                text = text.replace(`{${name}}`, value);
+            });
+        }
+        return text;
+    }
 
     // camera-card.js es un componente aparte (la tarjeta de cámara que se
     // monta en el panel de CUALQUIER máquina, no solo en esta sección, y
@@ -17,7 +270,7 @@
         // inyecta por su cuenta), así que hay que bumpear este número cada
         // vez que cambie camera-card.js o el navegador sigue sirviendo una
         // copia vieja cacheada indefinidamente.
-        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js?v=1.2.0';
+        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js?v=1.4.0';
         document.body.appendChild(cardScript);
     }
 
@@ -89,7 +342,7 @@
     async function api(url, options = {}) {
         const response = await fetch(url, options);
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.detail || 'La operación no se pudo completar.');
+        if (!response.ok) throw new Error(data.detail || tr('operationCouldNotComplete'));
         return data;
     }
 
@@ -117,7 +370,7 @@
         try {
             await api('/api/cameras', { method: 'POST', body: new URLSearchParams({ name, stream_url: streamUrl }) });
             closeAddPanel();
-            toast(`${name}: cámara agregada.`);
+            toast(tr('cameraAdded', { name }));
             await refreshAll();
         } catch (error) {
             toast(error.message, 'error');
@@ -134,13 +387,13 @@
         const username = form.username.value.trim();
         const password = form.password.value;
         if (!name || !username || (!host && !onvifUrl)) {
-            toast('Indicá la IP de la cámara o la URL completa del servicio ONVIF.', 'error');
+            toast(tr('onvifNeedHostOrUrl'), 'error');
             return;
         }
         const submitBtn = root.querySelector('#cv-add-onvif-submit-btn');
         const originalLabel = submitBtn.textContent;
         submitBtn.disabled = true;
-        submitBtn.textContent = onvifUrl ? 'Conectando…' : (port ? 'Conectando…' : 'Buscando puerto…');
+        submitBtn.textContent = onvifUrl ? tr('connectingLabel') : (port ? tr('connectingLabel') : tr('searchingPortLabel'));
         try {
             // GetCapabilities + GetProfiles + GetStreamUri contra el dispositivo real
             // -- tarda unos segundos, más todavía si hay que escanear el puerto.
@@ -155,7 +408,7 @@
             }
             await api('/api/cameras/onvif', { method: 'POST', body: new URLSearchParams(params) });
             closeAddPanel();
-            toast(`${name}: cámara agregada.`);
+            toast(tr('cameraAdded', { name }));
             await refreshAll();
         } catch (error) {
             toast(error.message, 'error');
@@ -166,7 +419,7 @@
     }
 
     async function removeCamera(camera) {
-        if (!(await confirmDialog(`¿Eliminar "${camera.name}"? Solo se quita del registro de NOPAL, la cámara y su stream no se ven afectados.`, 'Eliminar cámara'))) return;
+        if (!(await confirmDialog(tr('confirmRemoveCamera', { name: camera.name }), tr('removeCameraTitle')))) return;
         try {
             await api('/api/cameras/remove', { method: 'POST', body: new URLSearchParams({ id: camera.id }) });
             await refreshAll();
@@ -184,12 +437,12 @@
     // igual que cualquier otra en el grid.
 
     const BOUND_DEVICE_SOURCES = [
-        { type: 'bambu', label: 'Bambu Lab', url: '/api/bambu/printers', listKey: 'printers' },
-        { type: 'elegoo', label: 'Elegoo', url: '/api/elegoo/printers', listKey: 'printers' },
-        { type: 'flashforge', label: 'FlashForge', url: '/api/flashforge/printers', listKey: 'printers' },
-        { type: 'marlin', label: 'Marlin', url: '/api/marlin-printers/registry/status', listKey: 'printers' },
-        { type: 'klipper', label: 'Klipper', url: '/api/printers/status', listKey: 'printers' },
-        { type: 'laser', label: 'Láser/CNC', url: '/api/laser/registry/status', listKey: 'lasers' },
+        { type: 'bambu', get label() { return tr('brandBambu'); }, url: '/api/bambu/printers', listKey: 'printers' },
+        { type: 'elegoo', get label() { return tr('brandElegoo'); }, url: '/api/elegoo/printers', listKey: 'printers' },
+        { type: 'flashforge', get label() { return tr('brandFlashforge'); }, url: '/api/flashforge/printers', listKey: 'printers' },
+        { type: 'marlin', get label() { return tr('brandMarlin'); }, url: '/api/marlin-printers/registry/status', listKey: 'printers' },
+        { type: 'klipper', get label() { return tr('brandKlipper'); }, url: '/api/printers/status', listKey: 'printers' },
+        { type: 'laser', get label() { return tr('brandLaserCnc'); }, url: '/api/laser/registry/status', listKey: 'lasers' },
     ];
 
     async function loadUsbDevices() {
@@ -222,7 +475,7 @@
                     if (source.type === 'laser') {
                         // /api/laser/registry/status junta láser y CNC -- se
                         // distinguen acá para no ofrecer un CNC como si fuera láser.
-                        options.push({ type: entry.kind === 'cnc' ? 'cnc' : 'laser', id: String(id), name: entry.name || id, brandLabel: entry.kind === 'cnc' ? 'CNC' : 'Láser' });
+                        options.push({ type: entry.kind === 'cnc' ? 'cnc' : 'laser', id: String(id), name: entry.name || id, brandLabel: entry.kind === 'cnc' ? tr('brandCnc') : tr('brandLaser') });
                         return;
                     }
                     options.push({ type: source.type, id: String(id), name: entry.name || id, brandLabel: source.label });
@@ -246,9 +499,9 @@
     }
 
     function renderUsbDeviceListHtml() {
-        if (usbState.loadingDevices) return '<p class="cv-empty">Buscando webcams conectadas…</p>';
+        if (usbState.loadingDevices) return `<p class="cv-empty">${tr('searchingWebcams')}</p>`;
         if (!usbState.devices.length) {
-            return '<p class="cv-empty">No se detectó ninguna webcam USB. Conectala y tocá "Buscar de nuevo".</p>';
+            return `<p class="cv-empty">${tr('noWebcamDetected')}</p>`;
         }
         const registeredPaths = new Set(state.cameras.map(camera => camera.device_path).filter(Boolean));
         return usbState.devices.map(device => {
@@ -261,7 +514,7 @@
                         <strong>${esc(device.name)}</strong>
                         <small>${esc(device.device_path)}${device.vendor_id ? ` · ${esc(device.vendor_id)}:${esc(device.product_id)}` : ''}</small>
                     </span>
-                    ${already ? '<span class="cv-usb-badge">Ya registrada</span>' : ''}
+                    ${already ? `<span class="cv-usb-badge">${tr('alreadyRegisteredBadge')}</span>` : ''}
                 </button>`;
         }).join('');
     }
@@ -271,22 +524,22 @@
         if (!device) return '';
         const boundSection = usbState.purpose === 'timelapse' ? `
             <label>
-                <span>¿Qué dispositivo vas a filmar?</span>
+                <span>${tr('whatDeviceToFilm')}</span>
                 <select id="cv-usb-bound-select" ${usbState.loadingBoundOptions ? 'disabled' : ''}>
-                    <option value="">${usbState.loadingBoundOptions ? 'Cargando dispositivos…' : 'Elegí un dispositivo'}</option>
+                    <option value="">${usbState.loadingBoundOptions ? tr('loadingDevicesOption') : tr('chooseDeviceOption')}</option>
                     ${usbState.boundOptions.map(opt => `<option value="${esc(opt.type)}::${esc(opt.id)}" ${usbState.boundType === opt.type && usbState.boundId === opt.id ? 'selected' : ''}>${esc(opt.brandLabel)} — ${esc(opt.name)}</option>`).join('')}
                 </select>
-                <p class="cv-usb-hint">La captura automática de frames durante la impresión y el armado del video todavía no están implementados -- por ahora esto solo guarda la asociación para cuando esa función esté lista.</p>
+                <p class="cv-usb-hint">${tr('timelapseNotImplementedHint')}</p>
             </label>` : '';
         const noteSection = usbState.purpose === 'other' ? `
-            <label><span>¿Para qué la vas a usar?</span><input type="text" id="cv-usb-note-input" maxlength="140" placeholder="Ej. vigilar el taller"></label>` : '';
+            <label><span>${tr('whatWillYouUseItFor')}</span><input type="text" id="cv-usb-note-input" maxlength="140" placeholder="${tr('exampleWatchWorkshop')}"></label>` : '';
         return `
-            <label><span>Nombre</span><input type="text" id="cv-usb-name-input" maxlength="60" value="${esc(device.name)}"></label>
+            <label><span>${tr('nameLabel')}</span><input type="text" id="cv-usb-name-input" maxlength="60" value="${esc(device.name)}"></label>
             <div class="cv-usb-purpose">
-                <span>¿Para qué la vas a usar?</span>
-                <label class="cv-usb-radio"><input type="radio" name="cv-usb-purpose" value="monitoring" ${usbState.purpose === 'monitoring' ? 'checked' : ''}><span>Monitoreo general</span></label>
-                <label class="cv-usb-radio"><input type="radio" name="cv-usb-purpose" value="timelapse" ${usbState.purpose === 'timelapse' ? 'checked' : ''}><span>Timelapse de un dispositivo</span></label>
-                <label class="cv-usb-radio"><input type="radio" name="cv-usb-purpose" value="other" ${usbState.purpose === 'other' ? 'checked' : ''}><span>Otra función</span></label>
+                <span>${tr('whatWillYouUseItFor')}</span>
+                <label class="cv-usb-radio"><input type="radio" name="cv-usb-purpose" value="monitoring" ${usbState.purpose === 'monitoring' ? 'checked' : ''}><span>${tr('purposeMonitoring')}</span></label>
+                <label class="cv-usb-radio"><input type="radio" name="cv-usb-purpose" value="timelapse" ${usbState.purpose === 'timelapse' ? 'checked' : ''}><span>${tr('purposeTimelapse')}</span></label>
+                <label class="cv-usb-radio"><input type="radio" name="cv-usb-purpose" value="other" ${usbState.purpose === 'other' ? 'checked' : ''}><span>${tr('purposeOther')}</span></label>
             </div>
             ${boundSection}
             ${noteSection}`;
@@ -332,7 +585,7 @@
         try {
             await api('/api/cameras/usb/register', { method: 'POST', body: new URLSearchParams(params) });
             closeAddPanel();
-            toast(`${params.name}: cámara agregada.`);
+            toast(tr('cameraAdded', { name: params.name }));
             await refreshAll();
         } catch (error) {
             toast(error.message, 'error');
@@ -347,39 +600,39 @@
     function renderEditPurposeHtml() {
         const purposeCards = `
             <div class="cv-field-group">
-                <span class="cv-field-label">${icon(ICON_TARGET, 14)} ¿PARA QUÉ LA VAS A USAR?</span>
+                <span class="cv-field-label">${icon(ICON_TARGET, 14)} ${tr('whatForUpper')}</span>
                 <div class="cv-purpose-cards">
                     <label class="cv-purpose-card">
                         <input type="radio" name="cv-edit-purpose" value="monitoring" ${editState.purpose === 'monitoring' ? 'checked' : ''}>
                         <span class="cv-purpose-card-radio"></span>
                         <span class="cv-purpose-card-icon">${icon(ICON_MONITOR, 22)}</span>
-                        <strong>Monitoreo general</strong>
-                        <small>Supervisión en tiempo real</small>
+                        <strong>${tr('purposeMonitoring')}</strong>
+                        <small>${tr('purposeMonitoringDesc')}</small>
                     </label>
                     <label class="cv-purpose-card">
                         <input type="radio" name="cv-edit-purpose" value="timelapse" ${editState.purpose === 'timelapse' ? 'checked' : ''}>
                         <span class="cv-purpose-card-radio"></span>
                         <span class="cv-purpose-card-icon">${icon(ICON_CLOCK, 22)}</span>
-                        <strong>Timelapse de un dispositivo</strong>
-                        <small>Captura en intervalos</small>
+                        <strong>${tr('purposeTimelapse')}</strong>
+                        <small>${tr('purposeTimelapseDesc')}</small>
                     </label>
                     <label class="cv-purpose-card">
                         <input type="radio" name="cv-edit-purpose" value="other" ${editState.purpose === 'other' ? 'checked' : ''}>
                         <span class="cv-purpose-card-radio"></span>
                         <span class="cv-purpose-card-icon">${icon(ICON_GRID_APPS, 22)}</span>
-                        <strong>Otra función</strong>
-                        <small>Uso personalizado</small>
+                        <strong>${tr('purposeOther')}</strong>
+                        <small>${tr('purposeOtherDesc')}</small>
                     </label>
                 </div>
             </div>`;
 
         const timelapseDetails = editState.purpose === 'timelapse' ? `
             <div class="cv-field-group">
-                <span class="cv-field-label">${icon(ICON_VIDEO_CAM, 14)} ¿QUÉ DISPOSITIVO VAS A FILMAR?</span>
+                <span class="cv-field-label">${icon(ICON_VIDEO_CAM, 14)} ${tr('whatDeviceUpper')}</span>
                 <div class="cv-select-icon">
                     ${icon(ICON_TARGET, 16)}
                     <select id="cv-edit-bound-select" ${editState.loadingBoundOptions ? 'disabled' : ''}>
-                        <option value="">${editState.loadingBoundOptions ? 'Cargando dispositivos…' : 'Elegí un dispositivo'}</option>
+                        <option value="">${editState.loadingBoundOptions ? tr('loadingDevicesOption') : tr('chooseDeviceOption')}</option>
                         ${editState.boundOptions.map(opt => `<option value="${esc(opt.type)}::${esc(opt.id)}" ${editState.boundType === opt.type && editState.boundId === opt.id ? 'selected' : ''}>${esc(opt.brandLabel)} — ${esc(opt.name)}</option>`).join('')}
                     </select>
                 </div>
@@ -387,39 +640,39 @@
             <div class="cv-timelapse-params-row">
                 <div class="cv-timelapse-params-col">
                     <div class="cv-field-group">
-                        <span class="cv-field-label">${icon(ICON_CLOCK, 14)} INTERVALO (SEGUNDOS)</span>
+                        <span class="cv-field-label">${icon(ICON_CLOCK, 14)} ${tr('intervalSecondsUpper')}</span>
                         <div class="cv-stepper-row">
                             <div class="cv-stepper">
                                 <button type="button" class="cv-stepper-btn" data-cv-step="interval" data-cv-step-dir="-1">${icon(ICON_MINUS, 14)}</button>
                                 <input type="number" id="cv-edit-interval-input" min="1" step="1" value="${editState.intervalS}">
                                 <button type="button" class="cv-stepper-btn" data-cv-step="interval" data-cv-step-dir="1">${icon(ICON_PLUS, 14)}</button>
                             </div>
-                            <span class="cv-stepper-hint">Tiempo entre cada captura.</span>
+                            <span class="cv-stepper-hint">${tr('timeBetweenCaptures')}</span>
                         </div>
                     </div>
                     <div class="cv-field-group">
-                        <span class="cv-field-label">${icon(ICON_FILM, 14)} FPS DEL VIDEO FINAL</span>
+                        <span class="cv-field-label">${icon(ICON_FILM, 14)} ${tr('fpsFinalVideoUpper')}</span>
                         <div class="cv-stepper-row">
                             <div class="cv-stepper">
                                 <button type="button" class="cv-stepper-btn" data-cv-step="fps" data-cv-step-dir="-1">${icon(ICON_MINUS, 14)}</button>
                                 <input type="number" id="cv-edit-fps-input" min="1" step="1" value="${editState.fps}">
                                 <button type="button" class="cv-stepper-btn" data-cv-step="fps" data-cv-step-dir="1">${icon(ICON_PLUS, 14)}</button>
                             </div>
-                            <span class="cv-stepper-hint">Cuadros por segundo del video generado.</span>
+                            <span class="cv-stepper-hint">${tr('framesPerSecondHint')}</span>
                         </div>
                     </div>
                 </div>
                 <div class="cv-info-panel">
-                    <div class="cv-info-panel-header">${icon(ICON_INFO, 16)}<span>INFORMACIÓN</span></div>
+                    <div class="cv-info-panel-header">${icon(ICON_INFO, 16)}<span>${tr('infoUpper')}</span></div>
                     <div class="cv-info-panel-illustration">${icon(ICON_VIDEO_CAM, 26)}<span class="cv-info-panel-dashes"></span>${icon(ICON_GRID_APPS, 22)}</div>
-                    <p>El timelapse capturará imágenes a intervalos definidos y generará un video con la velocidad seleccionada.</p>
+                    <p>${tr('timelapseInfoText')}</p>
                 </div>
             </div>` : '';
 
         const noteSection = editState.purpose === 'other' ? `
             <div class="cv-field-group">
-                <span class="cv-field-label">¿Para qué la vas a usar?</span>
-                <input type="text" id="cv-edit-note-input" maxlength="140" value="${esc(editState.note)}" placeholder="Ej. vigilar el taller">
+                <span class="cv-field-label">${tr('whatWillYouUseItFor')}</span>
+                <input type="text" id="cv-edit-note-input" maxlength="140" value="${esc(editState.note)}" placeholder="${tr('exampleWatchWorkshop')}">
             </div>` : '';
 
         return purposeCards + timelapseDetails + noteSection;
@@ -485,7 +738,7 @@
                 });
             }
             closeEditPanel();
-            toast(`${name}: cámara actualizada.`);
+            toast(tr('cameraUpdated', { name }));
             await refreshAll();
         } catch (error) {
             toast(error.message, 'error');
@@ -526,7 +779,7 @@
     function renderGrid() {
         const grid = root.querySelector('#cv-grid');
         if (!state.cameras.length) {
-            grid.innerHTML = `<p class="cv-empty">${state.loading ? 'Cargando…' : 'Todavía no agregaste ninguna cámara.'}</p>`;
+            grid.innerHTML = `<p class="cv-empty">${state.loading ? tr('loadingEllipsis') : tr('noCamerasYet')}</p>`;
             return;
         }
         grid.innerHTML = state.cameras.map(camera => `
@@ -603,15 +856,15 @@
                     <header class="cv-header">
                         <div class="cv-header-icon">${icon(ICON_CAMERA, 30)}</div>
                         <div class="cv-header-copy">
-                            <h1>Cámaras</h1>
-                            <span class="cv-header-sub">NOPAL Labs · v1.0.0</span>
+                            <h1>${tr('pageTitle')}</h1>
+                            <span class="cv-header-sub">NOPAL Labs · v${PLUGIN_VERSION}</span>
                         </div>
                         <div class="cv-layout-switch">
-                            <button type="button" class="cv-icon-btn${state.gridLayout === '1x1' ? ' active' : ''}" data-cv-layout="1x1" title="1 por fila">${icon(ICON_GRID_1, 15)}</button>
-                            <button type="button" class="cv-icon-btn${state.gridLayout === '2x2' ? ' active' : ''}" data-cv-layout="2x2" title="2 por fila">${icon(ICON_GRID_2, 15)}</button>
-                            <button type="button" class="cv-icon-btn${state.gridLayout === '3x3' ? ' active' : ''}" data-cv-layout="3x3" title="3 por fila">${icon(ICON_GRID_3, 15)}</button>
+                            <button type="button" class="cv-icon-btn${state.gridLayout === '1x1' ? ' active' : ''}" data-cv-layout="1x1" title="${tr('layout1PerRow')}">${icon(ICON_GRID_1, 15)}</button>
+                            <button type="button" class="cv-icon-btn${state.gridLayout === '2x2' ? ' active' : ''}" data-cv-layout="2x2" title="${tr('layout2PerRow')}">${icon(ICON_GRID_2, 15)}</button>
+                            <button type="button" class="cv-icon-btn${state.gridLayout === '3x3' ? ' active' : ''}" data-cv-layout="3x3" title="${tr('layout3PerRow')}">${icon(ICON_GRID_3, 15)}</button>
                         </div>
-                        <button type="button" class="cv-btn cv-btn-accent" id="cv-add-btn">${icon(ICON_PLUS, 16)}<span>Agregar cámara</span></button>
+                        <button type="button" class="cv-btn cv-btn-accent" id="cv-add-btn">${icon(ICON_PLUS, 16)}<span>${tr('addCameraBtn')}</span></button>
                     </header>
 
                     <div class="cv-grid cv-grid-${state.gridLayout}" id="cv-grid"></div>
@@ -620,35 +873,35 @@
                 <div class="cv-panel-overlay" id="cv-add-panel" hidden>
                     <div class="cv-panel-backdrop" data-cv-close-add></div>
                     <div class="cv-panel-dialog">
-                        <div class="cv-panel-header"><span><strong>Agregar cámara</strong><small>Un stream MJPEG directo, o resolvela sola por ONVIF (recomendado si tu cámara lo soporta: no hace falta saber el formato de URL RTSP).</small></span><button type="button" data-cv-close-add>${icon(ICON_CLOSE, 16)}</button></div>
+                        <div class="cv-panel-header"><span><strong>${tr('addCameraTitle')}</strong><small>${tr('addCameraHint')}</small></span><button type="button" data-cv-close-add>${icon(ICON_CLOSE, 16)}</button></div>
                         <div class="cv-add-tabs">
-                            <button type="button" class="cv-add-tab active" data-cv-add-tab="url">URL directa</button>
-                            <button type="button" class="cv-add-tab" data-cv-add-tab="onvif">ONVIF</button>
-                            <button type="button" class="cv-add-tab" data-cv-add-tab="usb">${icon(ICON_USB, 14)}<span>USB</span></button>
+                            <button type="button" class="cv-add-tab active" data-cv-add-tab="url">${tr('tabUrlDirect')}</button>
+                            <button type="button" class="cv-add-tab" data-cv-add-tab="onvif">${tr('tabOnvif')}</button>
+                            <button type="button" class="cv-add-tab" data-cv-add-tab="usb">${icon(ICON_USB, 14)}<span>${tr('tabUsb')}</span></button>
                         </div>
                         <form class="cv-add-form" id="cv-add-form-url">
-                            <label><span>Nombre</span><input type="text" name="name" maxlength="60" placeholder="Ej. Cámara cama" required></label>
-                            <label><span>URL del stream</span><input type="text" name="stream_url" placeholder="http://192.168.1.50:8080/stream  o  rtsp://usuario:clave@192.168.1.50:554/..." required></label>
-                            <div class="cv-panel-actions"><button type="button" data-cv-close-add>Cancelar</button><button type="submit" class="cv-btn-accent">Agregar</button></div>
+                            <label><span>${tr('nameLabel')}</span><input type="text" name="name" maxlength="60" placeholder="${tr('exampleCameraBed')}" required></label>
+                            <label><span>${tr('streamUrlLabel')}</span><input type="text" name="stream_url" placeholder="${tr('streamUrlPlaceholder')}" required></label>
+                            <div class="cv-panel-actions"><button type="button" data-cv-close-add>${tr('cancelBtn')}</button><button type="submit" class="cv-btn-accent">${tr('addBtn')}</button></div>
                         </form>
                         <form class="cv-add-form" id="cv-add-form-onvif" hidden>
-                            <label><span>Nombre</span><input type="text" name="name" maxlength="60" placeholder="Ej. Cámara cama" required></label>
-                            <label><span>IP de la cámara</span><input type="text" name="host" placeholder="192.168.1.50"></label>
-                            <label><span>Puerto ONVIF <small>(opcional: si no lo sabés, lo buscamos solos)</small></span><input type="number" name="port" min="1" max="65535" placeholder="Dejalo vacío para autodetectar"></label>
-                            <p class="cv-onvif-or">— o, si tu cámara no usa el path estándar —</p>
-                            <label><span>URL completa del servicio ONVIF <small>(reemplaza IP + puerto)</small></span><input type="text" name="onvif_url" placeholder="http://192.168.1.50:8899/onvif/device_service"></label>
-                            <label><span>Usuario</span><input type="text" name="username" placeholder="admin" required></label>
-                            <label><span>Contraseña</span><input type="password" name="password" required></label>
-                            <div class="cv-panel-actions"><button type="button" data-cv-close-add>Cancelar</button><button type="submit" class="cv-btn-accent" id="cv-add-onvif-submit-btn">Conectar</button></div>
+                            <label><span>${tr('nameLabel')}</span><input type="text" name="name" maxlength="60" placeholder="${tr('exampleCameraBed')}" required></label>
+                            <label><span>${tr('cameraIpLabel')}</span><input type="text" name="host" placeholder="192.168.1.50"></label>
+                            <label><span>${tr('onvifPortLabel')} <small>${tr('onvifPortHint')}</small></span><input type="number" name="port" min="1" max="65535" placeholder="${tr('autoDetectPlaceholder')}"></label>
+                            <p class="cv-onvif-or">${tr('onvifOrDivider')}</p>
+                            <label><span>${tr('onvifFullUrlLabel')} <small>${tr('onvifFullUrlHint')}</small></span><input type="text" name="onvif_url" placeholder="http://192.168.1.50:8899/onvif/device_service"></label>
+                            <label><span>${tr('usernameLabel')}</span><input type="text" name="username" placeholder="admin" required></label>
+                            <label><span>${tr('passwordLabel')}</span><input type="password" name="password" required></label>
+                            <div class="cv-panel-actions"><button type="button" data-cv-close-add>${tr('cancelBtn')}</button><button type="submit" class="cv-btn-accent" id="cv-add-onvif-submit-btn">${tr('connectBtn')}</button></div>
                         </form>
                         <div class="cv-add-form" id="cv-add-form-usb" hidden>
                             <div class="cv-usb-list-header">
-                                <span>Webcams detectadas</span>
-                                <button type="button" class="cv-icon-btn" id="cv-usb-rescan-btn" title="Buscar de nuevo">${icon(ICON_REFRESH, 14)}</button>
+                                <span>${tr('webcamsDetected')}</span>
+                                <button type="button" class="cv-icon-btn" id="cv-usb-rescan-btn" title="${tr('searchAgainTitle')}">${icon(ICON_REFRESH, 14)}</button>
                             </div>
                             <div id="cv-usb-device-list" class="cv-usb-device-list"></div>
                             <div id="cv-usb-detail" hidden></div>
-                            <div class="cv-panel-actions"><button type="button" data-cv-close-add>Cancelar</button><button type="button" class="cv-btn-accent" id="cv-add-usb-submit-btn" disabled>Agregar</button></div>
+                            <div class="cv-panel-actions"><button type="button" data-cv-close-add>${tr('cancelBtn')}</button><button type="button" class="cv-btn-accent" id="cv-add-usb-submit-btn" disabled>${tr('addBtn')}</button></div>
                         </div>
                     </div>
                 </div>
@@ -659,27 +912,27 @@
                         <div class="cv-edit-header">
                             <div class="cv-edit-header-icon">${icon(ICON_CAMERA, 24)}</div>
                             <div class="cv-edit-header-copy">
-                                <strong>Configurar cámara</strong>
-                                <span>Define el propósito y la captura de tu cámara.</span>
+                                <strong>${tr('configureCameraTitle')}</strong>
+                                <span>${tr('configureCameraSubtitle')}</span>
                             </div>
                             <button type="button" class="cv-icon-btn cv-edit-close-btn" data-cv-close-edit>${icon(ICON_CLOSE, 16)}</button>
                         </div>
                         <form class="cv-add-form cv-edit-form-body" id="cv-edit-form">
                             <div class="cv-field-group">
-                                <span class="cv-field-label">${icon(ICON_TAG, 14)} NOMBRE DE LA CÁMARA</span>
+                                <span class="cv-field-label">${icon(ICON_TAG, 14)} ${tr('cameraNameUpper')}</span>
                                 <div class="cv-input-icon">
                                     ${icon(ICON_CAMERA, 16)}
                                     <input type="text" id="cv-edit-name-input" maxlength="60" required>
                                 </div>
-                                <p class="cv-field-hint">Este nombre te ayudará a identificarla fácilmente.</p>
+                                <p class="cv-field-hint">${tr('nameHelpsIdentify')}</p>
                             </div>
                             <hr class="cv-edit-divider">
                             <div id="cv-edit-purpose-section"></div>
                             <div class="cv-edit-footer">
-                                <button type="button" class="cv-btn cv-btn-danger" id="cv-edit-delete-btn">${icon(ICON_TRASH, 15)}<span>Eliminar cámara</span></button>
+                                <button type="button" class="cv-btn cv-btn-danger" id="cv-edit-delete-btn">${icon(ICON_TRASH, 15)}<span>${tr('deleteCameraLabel')}</span></button>
                                 <div class="cv-edit-footer-actions">
-                                    <button type="button" class="cv-btn" data-cv-close-edit>${icon(ICON_CLOSE, 15)}<span>Cancelar</span></button>
-                                    <button type="submit" class="cv-btn cv-btn-accent" id="cv-edit-submit-btn">${icon(ICON_SAVE, 15)}<span>Guardar</span></button>
+                                    <button type="button" class="cv-btn" data-cv-close-edit>${icon(ICON_CLOSE, 15)}<span>${tr('cancelBtn')}</span></button>
+                                    <button type="submit" class="cv-btn cv-btn-accent" id="cv-edit-submit-btn">${icon(ICON_SAVE, 15)}<span>${tr('saveBtn')}</span></button>
                                 </div>
                             </div>
                         </form>
@@ -791,8 +1044,8 @@
         navButton.className = 'nav-item';
         navButton.dataset.section = 'camera-viewer';
         navButton.dataset.pluginNav = PLUGIN_ID;
-        navButton.title = 'Cámaras';
-        navButton.innerHTML = `${icon(ICON_CAMERA, 20)}<span>Cámaras</span>`;
+        navButton.title = tr('pageTitle');
+        navButton.innerHTML = `${icon(ICON_CAMERA, 20)}<span>${esc(tr('pageTitle'))}</span>`;
         navButton.addEventListener('click', () => window.switchSection?.('camera-viewer'));
         pluginsContainer?.appendChild(navButton);
 
@@ -814,6 +1067,6 @@
     }
 
     window.NopalPluginRegistry = window.NopalPluginRegistry || {};
-    window.NopalPluginRegistry[PLUGIN_ID] = { mount, unmount, version: '1.0.0' };
+    window.NopalPluginRegistry[PLUGIN_ID] = { mount, unmount, version: PLUGIN_VERSION };
     mount();
 })();
