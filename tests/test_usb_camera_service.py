@@ -264,3 +264,33 @@ def test_is_device_present_reflects_real_filesystem(tmp_path):
     present = tmp_path / "video0"
     present.write_bytes(b"")
     assert usb_camera_service.is_device_present(str(present)) is True
+
+
+class TestInputArgs:
+    """De dónde lee ffmpeg: un nodo /dev/videoN o una URL.
+
+    El caso que motivó esto: crowsnest sirve la webcam de Klipper por MJPEG
+    pero escucha solo en 127.0.0.1, así que el navegador -- que corre en
+    otra máquina -- nunca la alcanza, y el /dev/video0 tampoco se puede
+    abrir dos veces porque crowsnest ya lo tiene. NOPAL la lee y la
+    retransmite bajo su propia sesión.
+    """
+
+    def test_un_dispositivo_lleva_el_demuxer_v4l2(self):
+        assert usb_camera_service._input_args("/dev/video0") == ["-f", "v4l2", "-i", "/dev/video0"]
+
+    def test_una_url_no_lleva_v4l2(self):
+        """Forzarle ese demuxer haría que ffmpeg intentara abrir la
+        dirección como si fuera un nodo de dispositivo."""
+        args = usb_camera_service._input_args("http://127.0.0.1:8080/?action=stream")
+        assert "-f" not in args or "v4l2" not in args
+        assert args[-2:] == ["-i", "http://127.0.0.1:8080/?action=stream"]
+
+    def test_una_url_se_reconecta_sola(self):
+        """El proveedor puede reiniciarse; un corte de un segundo no debe
+        dejar la cámara muerta hasta que alguien recargue el panel."""
+        assert "-reconnect" in usb_camera_service._input_args("http://host/stream")
+
+    def test_mayusculas_y_rtsp_tambien_cuentan_como_url(self):
+        for fuente in ("HTTP://host/x", "https://host/x", "rtsp://host/x"):
+            assert "v4l2" not in usb_camera_service._input_args(fuente), fuente

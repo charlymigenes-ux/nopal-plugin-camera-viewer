@@ -29,6 +29,12 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 FFMPEG_BIN = "ffmpeg"
+# Una fuente puede no ser un /dev/videoN. Caso real: crowsnest sirve la
+# webcam de Klipper por MJPEG pero escucha SOLO en 127.0.0.1, así que el
+# navegador -- que corre en otra máquina -- nunca la alcanza, y el
+# dispositivo tampoco se puede abrir dos veces. NOPAL la lee acá y la
+# retransmite bajo su propia sesión.
+_URL_PREFIXES = ("http://", "https://", "rtsp://", "rtsps://")
 IDLE_STOP_DELAY = 3.0  # margen antes de matar ffmpeg tras el último suscriptor -- evita cortar por una reconexión momentánea (ej. el lightbox cerrándose mientras el grid sigue mirando)
 JPEG_SOI = b"\xff\xd8"
 JPEG_EOI = b"\xff\xd9"
@@ -215,6 +221,21 @@ def set_focus(device_path: str, value: int) -> bool:
         os.close(fd)
 
 
+def _input_args(source: str) -> List[str]:
+    """Argumentos de entrada de ffmpeg según de dónde salga el video.
+
+    Un /dev/videoN necesita `-f v4l2` explícito. Una URL no: forzarle ese
+    demuxer haría que ffmpeg intentara abrir la dirección como si fuera un
+    nodo de dispositivo. Para red se agrega reconexión, porque el proveedor
+    (crowsnest, otra cámara IP) puede reiniciarse y un corte de un segundo
+    no debe dejar la cámara muerta hasta que alguien recargue el panel.
+    """
+    if source.lower().startswith(_URL_PREFIXES):
+        return ["-reconnect", "1", "-reconnect_streamed", "1",
+                "-reconnect_delay_max", "5", "-i", source]
+    return ["-f", "v4l2", "-i", source]
+
+
 # ── Streaming: un proceso ffmpeg por cámara activa, repartido a N suscriptores ──
 
 class _CameraStream:
@@ -303,7 +324,7 @@ async def ensure_stream(camera_id: str, device_path: str) -> _CameraStream:
             # llenar el buffer del pipe y colgar a ffmpeg a mitad de un
             # stream que sí está funcionando. Con "error" solo escribe algo
             # si de verdad falla, que es justo lo que queremos capturar.
-            FFMPEG_BIN, "-loglevel", "error", "-f", "v4l2", "-i", device_path,
+            FFMPEG_BIN, "-loglevel", "error", *_input_args(device_path),
             "-f", "mjpeg", "-q:v", "5", "-r", "10", "pipe:1",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
