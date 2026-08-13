@@ -778,33 +778,72 @@
     text-align: center;
 }
 
-/* Barra de controles de la cámara compacta (la que va dentro de la ficha de
-   cada máquina). Oscura y pegada bajo la imagen, como en la referencia. */
-.cam-card-compact { display: flex; flex-direction: column; }
-.cam-compact-bar {
+/* Controles de la cámara, dentro del video.
+
+   Van sobre un degradado que nace del propio borde inferior de la imagen, no
+   en una barra aparte: así la cámara conserva toda su altura y la ficha no se
+   parte en dos bloques. Los cuatro se reparten el ancho por igual, con
+   etiqueta bajo el icono, y se apoyan en un cristal difuminado para que se
+   lean tanto sobre una escena clara como sobre una oscura -- una barra negra
+   fija se ve mal sobre un fondo blanco y desaparece sobre uno negro. */
+.cam-live-wrap { position: relative; }
+
+.cam-overlay-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 4px;
+    padding: 26px 8px 8px;
+    background: linear-gradient(to top, rgba(3, 7, 12, .88) 15%, rgba(3, 7, 12, .55) 55%, transparent);
+    opacity: .96;
+    transition: opacity .2s ease;
+}
+.cam-live-wrap:hover .cam-overlay-bar { opacity: 1; }
+
+.cam-overlay-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 6px;
-    background: rgba(0, 0, 0, .72);
-    border-bottom-left-radius: inherit;
-    border-bottom-right-radius: inherit;
-}
-.cam-compact-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 28px;
-    padding: 0;
-    border: none;
-    border-radius: 7px;
-    background: transparent;
-    color: rgba(255, 255, 255, .82);
+    padding: 8px 4px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .1);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    color: #f1f5f9;
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    line-height: 1;
     cursor: pointer;
-    transition: background .15s ease, color .15s ease;
+    transition: background .16s ease, border-color .16s ease, transform .16s ease;
 }
-.cam-compact-btn:hover { background: rgba(255, 255, 255, .14); color: #fff; }
-.cam-compact-btn[data-cam-action="record"] { color: #f87171; }
-.cam-compact-btn:disabled { opacity: .45; cursor: default; }
+.cam-overlay-btn svg { width: 19px; height: 19px; }
+.cam-overlay-btn:hover {
+    background: rgba(255, 255, 255, .2);
+    border-color: rgba(255, 255, 255, .3);
+    transform: translateY(-1px);
+}
+.cam-overlay-btn:active { transform: translateY(0); }
+.cam-overlay-btn:disabled { opacity: .45; cursor: default; transform: none; }
+/* Grabar se tiñe de rojo: es la única de las cuatro que deja algo corriendo. */
+.cam-overlay-btn-rec { color: #fca5a5; }
+.cam-overlay-btn-rec:hover { background: rgba(248, 113, 113, .26); border-color: rgba(248, 113, 113, .5); }
+.cam-overlay-btn-rec[data-cam-recording="true"] {
+    background: rgba(239, 68, 68, .9);
+    border-color: rgba(239, 68, 68, .9);
+    color: #fff;
+}
+
+/* En una ficha angosta las etiquetas sobran antes que los iconos. */
+@media (max-width: 420px) {
+    .cam-overlay-btn span { display: none; }
+    .cam-overlay-btn { padding: 9px 4px; }
+}

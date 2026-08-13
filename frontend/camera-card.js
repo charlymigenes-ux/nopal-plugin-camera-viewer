@@ -38,6 +38,7 @@
     // BOUND_DEVICE_SOURCES más abajo) y no comparte ámbito con su tr()/lang().
     const I18N = {
         es: {
+            timelapseShortLabel: 'Timelapse', fullscreenShortLabel: 'Ampliar',
             timelapsePauseLabel: 'Pausar timelapse',
             cameraOfflineHint: 'La cámara no está entregando video.',
             liveViewLabel: 'Vista en vivo',
@@ -58,6 +59,7 @@
             videoAssembled: 'Video armado: {filename}',
         },
         en: {
+            timelapseShortLabel: 'Timelapse', fullscreenShortLabel: 'Expand',
             timelapsePauseLabel: 'Pause timelapse',
             cameraOfflineHint: 'The camera is not delivering video.',
             liveViewLabel: 'Live view',
@@ -78,6 +80,7 @@
             videoAssembled: 'Video assembled: {filename}',
         },
         de: {
+            timelapseShortLabel: 'Zeitraffer', fullscreenShortLabel: 'Vergrößern',
             timelapsePauseLabel: 'Zeitraffer pausieren',
             cameraOfflineHint: 'Die Kamera liefert kein Video.',
             liveViewLabel: 'Live-Ansicht',
@@ -98,6 +101,7 @@
             videoAssembled: 'Video erstellt: {filename}',
         },
         fr: {
+            timelapseShortLabel: 'Timelapse', fullscreenShortLabel: 'Agrandir',
             timelapsePauseLabel: 'Mettre en pause le timelapse',
             cameraOfflineHint: 'La caméra ne fournit pas de vidéo.',
             liveViewLabel: 'Vue en direct',
@@ -301,24 +305,26 @@
     }
 
     function compactCardHtml(camera) {
-        // Barra de controles bajo la imagen. Solo lo que de verdad hace
-        // algo: capturar, grabar y pantalla completa tienen endpoint, y la
-        // pausa es la del TIMELAPSE -- se rotula así, no como "pausar
-        // video", porque el stream no se pausa desde acá.
+        // Los controles van DENTRO del video, sobre un velo que se funde con
+        // la imagen -- no en una barra aparte debajo, que le robaba altura a
+        // la cámara y partía la ficha en dos bloques.
         //
-        // No hay botón de audio: el stream es MJPEG y no lleva sonido. Un
-        // control que nunca podría funcionar no se dibuja ni apagado.
+        // Solo lo que de verdad hace algo: capturar, grabar y pantalla
+        // completa tienen endpoint, y la pausa es la del TIMELAPSE, rotulada
+        // así y no como "pausar video". No hay botón de audio: el stream es
+        // MJPEG y no lleva sonido; un control que nunca podría funcionar no
+        // se dibuja ni apagado.
         return `
             <div class="cam-card cam-card-compact" data-cam-id="${esc(camera.id)}">
                 <div class="cam-live-wrap">
                     <img class="cam-live-img" src="${esc(camera.stream_url)}" alt="${esc(camera.name)}" loading="lazy">
                     <span class="cam-live-badge">LIVE</span>
-                </div>
-                <div class="cam-compact-bar">
-                    <button type="button" class="cam-compact-btn" data-cam-action="capture" title="${tr('captureLabel')}">${ICON_CAPTURE}</button>
-                    <button type="button" class="cam-compact-btn" data-cam-action="record" title="${tr('recordLabel')}">${ICON_RECORD}</button>
-                    <button type="button" class="cam-compact-btn" data-cam-action="pause" title="${tr('timelapsePauseLabel')}">${ICON_PAUSE}</button>
-                    <button type="button" class="cam-compact-btn" data-cam-action="fullscreen" title="${tr('fullscreenLabel')}">${ICON_FULLSCREEN}</button>
+                    <div class="cam-overlay-bar">
+                        <button type="button" class="cam-overlay-btn" data-cam-action="capture" title="${tr('captureLabel')}">${ICON_CAPTURE}<span>${tr('captureLabel')}</span></button>
+                        <button type="button" class="cam-overlay-btn cam-overlay-btn-rec" data-cam-action="record" title="${tr('recordLabel')}">${ICON_RECORD}<span>${tr('recordLabel')}</span></button>
+                        <button type="button" class="cam-overlay-btn" data-cam-action="pause" title="${tr('timelapsePauseLabel')}">${ICON_PAUSE}<span>${tr('timelapseShortLabel')}</span></button>
+                        <button type="button" class="cam-overlay-btn" data-cam-action="fullscreen" title="${tr('fullscreenLabel')}">${ICON_FULLSCREEN}<span>${tr('fullscreenShortLabel')}</span></button>
+                    </div>
                 </div>
             </div>`;
     }
