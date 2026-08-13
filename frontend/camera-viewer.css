@@ -761,3 +761,19 @@
     .cam-stat-grid { grid-template-columns: repeat(3, 1fr); }
     .cam-captures-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* Motivo por el que una cámara no da video. Va encima del recuadro negro:
+   antes ese recuadro no decía nada y el motivo quedaba solo en el log del
+   servidor, así que no había forma de saber si era el cable, el permiso o
+   que otro programa tenía tomada la cámara. */
+.cam-live-error {
+    position: absolute;
+    inset: auto 8px 8px 8px;
+    padding: 7px 9px;
+    border-radius: var(--radius-sm, 6px);
+    background: rgba(0, 0, 0, .72);
+    color: #fff;
+    font-size: .72rem;
+    line-height: 1.35;
+    text-align: center;
+}

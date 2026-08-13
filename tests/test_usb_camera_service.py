@@ -103,6 +103,7 @@ class TestQueryV4l2Capability:
 class _FakeProcess:
     def __init__(self, frames):
         self._frames = list(frames)
+        self._last = self._frames[-1] if self._frames else b""
         self.stdout = self
         self.returncode = None
         self.killed = False
@@ -111,8 +112,16 @@ class _FakeProcess:
     async def read(self, n):
         if self._frames:
             return self._frames.pop(0)
-        # Simula "sin más datos por ahora" sin cerrar el pipe -- el test
-        # cancela el reader_task explícitamente en vez de esperar EOF.
+        # Una cámara real no deja de entregar cuadros: repite el último con
+        # una pausa mínima. El doble original se quedaba mudo tras los
+        # primeros, y con eso un segundo suscriptor que llegaba después no
+        # recibía nada nunca -- algo que en una cámara de verdad no pasa,
+        # porque el siguiente cuadro llega en 100 ms.
+        if self._last:
+            await asyncio.sleep(0.01)
+            return self._last
+        # Sin cuadros: "todavía nada" sin cerrar el pipe. Cerrarlo
+        # significaría que ffmpeg murió, que es un caso distinto.
         await asyncio.sleep(3600)
         return b""
 
@@ -121,6 +130,11 @@ class _FakeProcess:
         self.returncode = -9
 
     async def wait(self):
+        # Un proceso vivo NO devuelve de wait(). El doble original devolvía
+        # de inmediato, que es justo lo contrario de lo que hace un proceso
+        # real, y hacía ver como muerto a un ffmpeg sano.
+        while self.returncode is None:
+            await asyncio.sleep(0.01)
         return self.returncode
 
 
@@ -177,6 +191,7 @@ class TestSharedStream:
         monkeypatch.setattr(usb_camera_service.asyncio, "create_subprocess_exec", fake_create_subprocess_exec)
         monkeypatch.setattr(usb_camera_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
         monkeypatch.setattr(usb_camera_service, "IDLE_STOP_DELAY", 0.05)
+        monkeypatch.setattr(usb_camera_service, "STARTUP_GRACE_SECONDS", 0.05)
 
         queue = await subscribe("cam-idle", "/dev/video0")
         await unsubscribe("cam-idle", queue)
@@ -294,3 +309,68 @@ class TestInputArgs:
     def test_mayusculas_y_rtsp_tambien_cuentan_como_url(self):
         for fuente in ("HTTP://host/x", "https://host/x", "rtsp://host/x"):
             assert "v4l2" not in usb_camera_service._input_args(fuente), fuente
+
+
+class TestFalloConMotivo:
+    """Una cámara que no arranca tiene que decir POR QUÉ.
+
+    Antes, si ffmpeg moría al abrir el dispositivo, el endpoint ya había
+    respondido 200 con un stream vacío que nunca daba un cuadro: el
+    navegador se quedaba con un recuadro negro y el motivo existía solo en
+    el log del servidor.
+    """
+
+    async def _proceso_que_muere(self, monkeypatch, stderr):
+        class _Tubo:
+            """stdout y stderr son tuberías DISTINTAS. Compartir una sola
+            hacía que el motivo se leyera como si fuera video y se perdiera."""
+
+            def __init__(self, contenido=b""):
+                self._contenido = contenido
+
+            async def read(self, n=-1):
+                datos, self._contenido = self._contenido, b""
+                return datos
+
+        class _Muerto:
+            def __init__(self):
+                self.stdout = _Tubo()          # cierra de inmediato: no hay video
+                self.stderr = _Tubo(stderr)    # y acá está el porqué
+                self.returncode = 1            # ya murió
+                self.pid = 1
+
+            def kill(self):
+                self.returncode = -9
+
+            async def wait(self):
+                return self.returncode
+
+        async def fake_exec(*args, **kwargs):
+            return _Muerto()
+
+        monkeypatch.setattr(usb_camera_service.asyncio, "create_subprocess_exec", fake_exec)
+        monkeypatch.setattr(usb_camera_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+        monkeypatch.setattr(usb_camera_service, "STARTUP_GRACE_SECONDS", 0.5)
+
+    async def test_dispositivo_ocupado_explica_que_otro_lo_tiene(self, monkeypatch):
+        await self._proceso_que_muere(
+            monkeypatch, b"Error opening input files: Device or resource busy")
+        with pytest.raises(RuntimeError, match="ya está usando esta cámara"):
+            await subscribe("cam-ocupada", "/dev/video0")
+
+    async def test_sin_ancho_de_banda_no_dice_que_falta_disco(self, monkeypatch):
+        """'No space left on device' en V4L2 NO habla del disco. Repetirle
+        eso al usuario lo manda a revisar el lugar equivocado."""
+        await self._proceso_que_muere(
+            monkeypatch, b"Error opening input files: No space left on device")
+        with pytest.raises(RuntimeError) as exc:
+            await subscribe("cam-sin-banda", "/dev/video2")
+        assert "ancho de banda USB" in str(exc.value)
+        assert "disco" not in str(exc.value).replace("No es el disco", "")
+
+    async def test_el_stream_muerto_no_queda_registrado(self, monkeypatch):
+        """Si quedara, el siguiente intento reusaría un proceso difunto."""
+        await self._proceso_que_muere(monkeypatch, b"Device or resource busy")
+        with pytest.raises(RuntimeError):
+            await subscribe("cam-fantasma", "/dev/video0")
+        assert "cam-fantasma" not in usb_camera_service._streams

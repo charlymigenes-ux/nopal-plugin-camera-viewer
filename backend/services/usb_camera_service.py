@@ -35,6 +35,13 @@ FFMPEG_BIN = "ffmpeg"
 # dispositivo tampoco se puede abrir dos veces. NOPAL la lee acá y la
 # retransmite bajo su propia sesión.
 _URL_PREFIXES = ("http://", "https://", "rtsp://", "rtsps://")
+# Tope de espera para saber si el stream arrancó. NO se espera este tiempo
+# completo: se corre una carrera entre el primer cuadro y la muerte de
+# ffmpeg, y gana el que llegue antes. Una cámara sana devuelve en cuanto
+# entrega su primer cuadro, así que no se le agrega latencia; una que el
+# dispositivo rechaza muere en milisegundos. El tope solo cubre el caso raro
+# de un proceso que ni entrega ni muere.
+STARTUP_GRACE_SECONDS = 2.0
 IDLE_STOP_DELAY = 3.0  # margen antes de matar ffmpeg tras el último suscriptor -- evita cortar por una reconexión momentánea (ej. el lightbox cerrándose mientras el grid sigue mirando)
 JPEG_SOI = b"\xff\xd8"
 JPEG_EOI = b"\xff\xd9"
@@ -236,6 +243,33 @@ def _input_args(source: str) -> List[str]:
     return ["-f", "v4l2", "-i", source]
 
 
+# Los errores de ffmpeg son crípticos y uno de ellos es directamente
+# engañoso: "No space left on device" en V4L2 NO habla del disco, habla del
+# ancho de banda USB, y manda a revisar el lugar equivocado.
+_MOTIVOS = (
+    ("Device or resource busy",
+     "Otro programa ya está usando esta cámara (por ejemplo crowsnest). "
+     "Un dispositivo de video solo admite un lector a la vez."),
+    ("No space left on device",
+     "No hay ancho de banda USB libre para esta cámara. No es el disco: "
+     "suele pasar con dos cámaras en el mismo puerto o concentrador."),
+    ("Permission denied",
+     "NOPAL no tiene permiso para abrir esta cámara. Su usuario tiene que "
+     "estar en el grupo 'video'."),
+    ("No such file or directory",
+     "La cámara ya no está conectada."),
+    ("Connection refused",
+     "No responde la dirección de la que se lee esta cámara."),
+)
+
+
+def _motivo_legible(linea: str) -> str:
+    for patron, explicacion in _MOTIVOS:
+        if patron.lower() in linea.lower():
+            return explicacion
+    return linea.strip() or "La cámara no entregó video y no dijo por qué."
+
+
 # ── Streaming: un proceso ffmpeg por cámara activa, repartido a N suscriptores ──
 
 class _CameraStream:
@@ -245,6 +279,11 @@ class _CameraStream:
         self.subscribers: List["asyncio.Queue[bytes]"] = []
         self.reader_task: Optional[asyncio.Task] = None
         self.stop_task: Optional[asyncio.Task] = None
+        # Último motivo de fallo, tal como lo dijo ffmpeg. Es lo que se le
+        # muestra al usuario en vez de un recuadro negro.
+        self.error: Optional[str] = None
+        # Se dispara con el primer cuadro: es la señal de "esto sí funciona".
+        self.first_frame = asyncio.Event()
 
 
 _streams: Dict[str, _CameraStream] = {}
@@ -270,6 +309,7 @@ async def _read_frames_loop(camera_id: str, stream: _CameraStream):
                     except Exception:
                         pass
                 if stderr_text:
+                    stream.error = _motivo_legible(stderr_text.splitlines()[-1])
                     logger.warning(f"[{camera_id}] ffmpeg terminó: {stderr_text.splitlines()[-1]}")
                 break
             buffer += chunk
@@ -286,6 +326,9 @@ async def _read_frames_loop(camera_id: str, stream: _CameraStream):
                     break
                 frame = bytes(buffer[start:end + 2])
                 buffer = buffer[end + 2:]
+                # Primer cuadro entregado: la prueba de que el stream sirve.
+                # Es lo que deja que ensure_stream conteste sin esperar.
+                stream.first_frame.set()
                 for queue in list(stream.subscribers):
                     if queue.full():
                         try:
@@ -334,14 +377,54 @@ async def ensure_stream(camera_id: str, device_path: str) -> _CameraStream:
         _streams[camera_id] = stream
         stream.reader_task = asyncio.create_task(_read_frames_loop(camera_id, stream))
         logger.info(f"[{camera_id}] ffmpeg iniciado para {device_path} (pid {process.pid})")
+
+        # Si el dispositivo lo rechaza, ffmpeg muere en menos de un segundo.
+        # Detectarlo acá es lo que permite responder un error con motivo en
+        # vez de un stream vacío que el navegador nunca sabrá interpretar.
         return stream
 
 
 async def subscribe(camera_id: str, device_path: str) -> "asyncio.Queue[bytes]":
+    """Registra un consumidor y confirma que el stream de verdad arrancó.
+
+    La cola se agrega ANTES de comprobar nada: si se esperara primero, el
+    primer cuadro se repartiría entre cero suscriptores y se perdería.
+
+    Después se corre una carrera entre ese primer cuadro y la muerte de
+    ffmpeg. Una cámara sana vuelve en cuanto entrega un cuadro, así que no
+    se le agrega latencia; una que el dispositivo rechaza muere en
+    milisegundos y acá se convierte en un error con motivo. Sin esto, el
+    endpoint respondía 200 y un stream vacío: el navegador se quedaba con un
+    recuadro negro para siempre y el motivo solo existía en el log.
+    """
     stream = await ensure_stream(camera_id, device_path)
     queue: "asyncio.Queue[bytes]" = asyncio.Queue(maxsize=2)
     stream.subscribers.append(queue)
-    return queue
+
+    proceso = stream.process
+    if proceso is None:
+        return queue
+
+    primer_cuadro = asyncio.create_task(stream.first_frame.wait())
+    murio = asyncio.create_task(proceso.wait())
+    try:
+        await asyncio.wait({primer_cuadro, murio}, timeout=STARTUP_GRACE_SECONDS,
+                           return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        primer_cuadro.cancel()
+        murio.cancel()
+
+    if proceso.returncode is None:
+        return queue
+
+    # Murió: se le da un instante al lector para recoger el stderr y
+    # traducirlo a algo que el usuario pueda accionar.
+    for _ in range(20):
+        if stream.error:
+            break
+        await asyncio.sleep(0.01)
+    await unsubscribe(camera_id, queue)
+    raise RuntimeError(stream.error or _motivo_legible(""))
 
 
 async def unsubscribe(camera_id: str, queue: "asyncio.Queue[bytes]") -> None:

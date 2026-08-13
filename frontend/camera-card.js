@@ -38,6 +38,7 @@
     // BOUND_DEVICE_SOURCES más abajo) y no comparte ámbito con su tr()/lang().
     const I18N = {
         es: {
+            cameraOfflineHint: 'La cámara no está entregando video.',
             liveViewLabel: 'Vista en vivo',
             operationCouldNotComplete: 'La operación no se pudo completar.',
             configureTimelapseTitle: 'Configurar timelapse',
@@ -56,6 +57,7 @@
             videoAssembled: 'Video armado: {filename}',
         },
         en: {
+            cameraOfflineHint: 'The camera is not delivering video.',
             liveViewLabel: 'Live view',
             operationCouldNotComplete: 'The operation could not be completed.',
             configureTimelapseTitle: 'Configure timelapse',
@@ -74,6 +76,7 @@
             videoAssembled: 'Video assembled: {filename}',
         },
         de: {
+            cameraOfflineHint: 'Die Kamera liefert kein Video.',
             liveViewLabel: 'Live-Ansicht',
             operationCouldNotComplete: 'Der Vorgang konnte nicht abgeschlossen werden.',
             configureTimelapseTitle: 'Zeitraffer konfigurieren',
@@ -92,6 +95,7 @@
             videoAssembled: 'Video erstellt: {filename}',
         },
         fr: {
+            cameraOfflineHint: 'La caméra ne fournit pas de vidéo.',
             liveViewLabel: 'Vue en direct',
             operationCouldNotComplete: "L'opération n'a pas pu être terminée.",
             configureTimelapseTitle: 'Configurer le timelapse',
@@ -202,7 +206,13 @@
     function watchStream(img) {
         const baseSrc = img.src;
         img.addEventListener('error', () => {
-            img.closest('.cam-card')?.classList.add('is-offline');
+            const card = img.closest('.cam-card');
+            card?.classList.add('is-offline');
+            // Un <img> roto no deja leer el cuerpo de la respuesta, así que
+            // se vuelve a pedir la misma URL para enterarse del motivo. Sin
+            // esto la tarjeta solo se pone gris y el usuario nunca sabe si
+            // es la cámara, el cable o que otro programa la tiene tomada.
+            mostrarMotivo(card, baseSrc);
             setTimeout(() => {
                 if (!document.body.contains(img)) return;
                 const sep = baseSrc.includes('?') ? '&' : '?';
@@ -210,8 +220,29 @@
             }, 5000);
         });
         img.addEventListener('load', () => {
-            img.closest('.cam-card')?.classList.remove('is-offline');
+            const card = img.closest('.cam-card');
+            card?.classList.remove('is-offline');
+            card?.querySelector('.cam-live-error')?.remove();
         });
+    }
+
+    async function mostrarMotivo(card, url) {
+        if (!card) return;
+        let motivo = '';
+        try {
+            const respuesta = await fetch(url, { headers: { 'X-Motivo': '1' } });
+            if (!respuesta.ok) {
+                const cuerpo = await respuesta.json().catch(() => null);
+                motivo = cuerpo?.detail || `HTTP ${respuesta.status}`;
+            }
+        } catch (_) { /* sin red: se queda el aviso genérico */ }
+        let aviso = card.querySelector('.cam-live-error');
+        if (!aviso) {
+            aviso = document.createElement('div');
+            aviso.className = 'cam-live-error';
+            card.querySelector('.cam-live-wrap')?.appendChild(aviso);
+        }
+        aviso.textContent = motivo || tr('cameraOfflineHint');
     }
 
     async function findBoundCamera(deviceType, deviceId) {
