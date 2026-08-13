@@ -398,3 +398,43 @@ class TestFfmpegMissing:
         monkeypatch.setattr(timelapse_service.shutil, "which", lambda name: None)
         with pytest.raises(RuntimeError, match="ffmpeg"):
             await timelapse_service.start_recording(cam["id"])
+
+
+class TestGrabacionesYBorrado:
+    """Las grabaciones se escribían a disco desde el primer día pero no se
+    podían listar ni borrar: el material solo crecía y nadie lo veía."""
+
+    def test_lista_las_grabaciones_mas_nuevas_primero(self, tmp_path, monkeypatch):
+        
+        import os, time
+        monkeypatch.setattr(timelapse_service.camera_service, "CAPTURES_DIR", str(tmp_path))
+        carpeta = timelapse_service._recordings_dir("cam1")
+        for i, nombre in enumerate(["100.mp4", "200.mp4", "300.mp4"]):
+            ruta = os.path.join(carpeta, nombre)
+            open(ruta, "wb").write(b"x" * (i + 1))
+        nombres = [g["filename"] for g in timelapse_service.list_recordings("cam1")]
+        assert nombres == ["300.mp4", "200.mp4", "100.mp4"]
+
+    def test_borra_una_grabacion(self, tmp_path, monkeypatch):
+        
+        import os
+        monkeypatch.setattr(timelapse_service.camera_service, "CAPTURES_DIR", str(tmp_path))
+        ruta = os.path.join(timelapse_service._recordings_dir("cam1"), "a.mp4")
+        open(ruta, "wb").write(b"x")
+        assert timelapse_service.delete_recording("cam1", "a.mp4") is True
+        assert not os.path.exists(ruta)
+        assert timelapse_service.delete_recording("cam1", "a.mp4") is False
+
+    def test_no_se_puede_salir_de_la_carpeta_de_la_camara(self, tmp_path, monkeypatch):
+        """Sin esta comprobación, un nombre como '../../auth_users.json'
+        borraría archivos fuera de las capturas."""
+        
+        import os
+        monkeypatch.setattr(timelapse_service.camera_service, "CAPTURES_DIR", str(tmp_path))
+        timelapse_service._recordings_dir("cam1")
+        victima = tmp_path / "no-tocar.json"
+        victima.write_text("{}", encoding="utf-8")
+        for maligno in ["../no-tocar.json", "..", ".", "a/b.mp4", "..\\no-tocar.json"]:
+            assert timelapse_service.delete_recording("cam1", maligno) is False, maligno
+            assert timelapse_service.delete_capture("cam1", maligno) is False, maligno
+        assert victima.exists(), "se borró un archivo fuera de la carpeta de la cámara"

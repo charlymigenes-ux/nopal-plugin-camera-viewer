@@ -246,6 +246,39 @@ async def camera_capture_file_endpoint(camera_id: str, filename: str, user: dict
     return FileResponse(path, media_type="image/jpeg")
 
 
+@router.delete("/api/cameras/{camera_id}/captures/{filename}")
+async def camera_capture_delete_endpoint(camera_id: str, filename: str, user: dict = Depends(require_role("admin"))):
+    """Borra una captura. Admin-only: es material que no se recupera."""
+    _require_camera(camera_id)
+    if not timelapse_service.delete_capture(camera_id, filename):
+        raise HTTPException(status_code=404, detail="Captura no encontrada")
+    return {"deleted": filename}
+
+
+@router.get("/api/cameras/{camera_id}/recordings")
+async def camera_recordings_list_endpoint(camera_id: str, limit: Optional[int] = None, user: dict = Depends(require_auth)):
+    """Grabaciones guardadas. Ya se escribían a disco desde el primer día,
+    pero no había forma de listarlas: quedaban ahí sin que nadie las viera."""
+    _require_camera(camera_id)
+    return {"recordings": timelapse_service.list_recordings(camera_id, limit=limit)}
+
+
+@router.get("/api/cameras/{camera_id}/recordings/{filename}")
+async def camera_recording_file_endpoint(camera_id: str, filename: str, user: dict = Depends(require_auth)):
+    path = timelapse_service.get_recording_file_path(camera_id, filename)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Grabación no encontrada")
+    return FileResponse(path, media_type="video/mp4")
+
+
+@router.delete("/api/cameras/{camera_id}/recordings/{filename}")
+async def camera_recording_delete_endpoint(camera_id: str, filename: str, user: dict = Depends(require_role("admin"))):
+    _require_camera(camera_id)
+    if not timelapse_service.delete_recording(camera_id, filename):
+        raise HTTPException(status_code=404, detail="Grabación no encontrada")
+    return {"deleted": filename}
+
+
 @router.post("/api/cameras/{camera_id}/record/start")
 async def camera_record_start_endpoint(camera_id: str, request: Request, user: dict = Depends(require_role("admin"))):
     try:

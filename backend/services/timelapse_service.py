@@ -443,3 +443,71 @@ async def assemble_timelapse_video(camera_id: str) -> str:
     if process.returncode != 0:
         raise RuntimeError(f"No se pudo armar el video: {stderr.decode('utf-8', errors='ignore')[-300:].strip()}")
     return output_path
+
+
+# ── Grabaciones y borrado ──
+# Las grabaciones ya se guardaban (ver _recordings_dir) pero no había forma
+# de listarlas ni de reproducirlas: quedaban en el disco sin que nadie las
+# viera. Y no existía ningún borrado, así que el material solo crecía.
+
+def list_recordings(camera_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Grabaciones de una cámara, la más reciente primero."""
+    carpeta = _recordings_dir(camera_id)
+    try:
+        archivos = sorted((f for f in os.listdir(carpeta) if f.endswith(".mp4")), reverse=True)
+    except OSError:
+        return []
+    if limit:
+        archivos = archivos[:limit]
+    resultado = []
+    for nombre in archivos:
+        ruta = os.path.join(carpeta, nombre)
+        try:
+            stat = os.stat(ruta)
+        except OSError:
+            continue
+        resultado.append({"filename": nombre, "timestamp": stat.st_mtime, "size_bytes": stat.st_size})
+    return resultado
+
+
+def _ruta_segura(camera_id: str, filename: str, carpeta: str) -> Optional[str]:
+    """Ruta de un archivo dentro de la carpeta de esa cámara, o None.
+
+    Se rechaza cualquier nombre con separadores o con '..': sin esto, un
+    nombre como '../../auth_users.json' saldría de la carpeta de capturas y
+    borraría lo que no debe.
+    """
+    if not filename or "/" in filename or "\\" in filename or filename in (".", ".."):
+        return None
+    ruta = os.path.abspath(os.path.join(carpeta, filename))
+    if not ruta.startswith(os.path.abspath(carpeta) + os.sep):
+        return None
+    return ruta if os.path.isfile(ruta) else None
+
+
+def get_recording_file_path(camera_id: str, filename: str) -> Optional[str]:
+    return _ruta_segura(camera_id, filename, _recordings_dir(camera_id))
+
+
+def delete_capture(camera_id: str, filename: str) -> bool:
+    ruta = _ruta_segura(camera_id, filename, _frames_dir(camera_id))
+    if ruta is None:
+        return False
+    try:
+        os.remove(ruta)
+        return True
+    except OSError as exc:
+        logger.warning(f"No se pudo borrar la captura {filename}: {exc}")
+        return False
+
+
+def delete_recording(camera_id: str, filename: str) -> bool:
+    ruta = _ruta_segura(camera_id, filename, _recordings_dir(camera_id))
+    if ruta is None:
+        return False
+    try:
+        os.remove(ruta)
+        return True
+    except OSError as exc:
+        logger.warning(f"No se pudo borrar la grabación {filename}: {exc}")
+        return False
