@@ -38,6 +38,11 @@
     // BOUND_DEVICE_SOURCES más abajo) y no comparte ámbito con su tr()/lang().
     const I18N = {
         es: {
+            deleteLabel: 'Borrar',
+            deleteConfirmShort: '¿Borrar esto?',
+            cancelLabel: 'Cancelar',
+            closeLabel: 'Cerrar',
+            noMediaYet: 'Todavía no hay capturas ni grabaciones.',
             timelapseShortLabel: 'Timelapse', fullscreenShortLabel: 'Ampliar',
             timelapsePauseLabel: 'Pausar timelapse',
             cameraOfflineHint: 'La cámara no está entregando video.',
@@ -59,6 +64,11 @@
             videoAssembled: 'Video armado: {filename}',
         },
         en: {
+            deleteLabel: 'Delete',
+            deleteConfirmShort: 'Delete this?',
+            cancelLabel: 'Cancel',
+            closeLabel: 'Close',
+            noMediaYet: 'No captures or recordings yet.',
             timelapseShortLabel: 'Timelapse', fullscreenShortLabel: 'Expand',
             timelapsePauseLabel: 'Pause timelapse',
             cameraOfflineHint: 'The camera is not delivering video.',
@@ -80,6 +90,11 @@
             videoAssembled: 'Video assembled: {filename}',
         },
         de: {
+            deleteLabel: 'Löschen',
+            deleteConfirmShort: 'Das löschen?',
+            cancelLabel: 'Abbrechen',
+            closeLabel: 'Schließen',
+            noMediaYet: 'Noch keine Aufnahmen.',
             timelapseShortLabel: 'Zeitraffer', fullscreenShortLabel: 'Vergrößern',
             timelapsePauseLabel: 'Zeitraffer pausieren',
             cameraOfflineHint: 'Die Kamera liefert kein Video.',
@@ -101,6 +116,11 @@
             videoAssembled: 'Video erstellt: {filename}',
         },
         fr: {
+            deleteLabel: 'Supprimer',
+            deleteConfirmShort: 'Supprimer ceci ?',
+            cancelLabel: 'Annuler',
+            closeLabel: 'Fermer',
+            noMediaYet: 'Aucune capture ni enregistrement.',
             timelapseShortLabel: 'Timelapse', fullscreenShortLabel: 'Agrandir',
             timelapsePauseLabel: 'Mettre en pause le timelapse',
             cameraOfflineHint: 'La caméra ne fournit pas de vidéo.',
@@ -167,6 +187,7 @@
     const ICON_PLAY = icon('<polygon points="5 3 19 12 5 21 5 3"/>', 14);
     const ICON_CAPTURE = icon('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>', 14);
     const ICON_RECORD = icon('<circle cx="12" cy="12" r="8"/>', 14);
+    const ICON_TRASH = icon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>', 13);
     const ICON_FULLSCREEN = icon('<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>', 14);
     const ICON_STOP = icon('<rect x="6" y="6" width="12" height="12" rx="1"/>', 14);
     const ICON_EXPAND = icon('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>', 14);
@@ -513,6 +534,128 @@
             }
         }
 
+
+        // ── Visor ampliado ────────────────────────────────────────────────
+        // El botón de ampliar llamaba a la pantalla completa del navegador
+        // sobre el <img>: la imagen sola, sin controles ni material. Acá se
+        // abre un visor propio con el video grande, sus controles debajo, y
+        // la tira de capturas, timelapses y grabaciones.
+
+        function tarjetaMedia(camera, item, tipo) {
+            const url = `/api/cameras/${camera.id}/${tipo === 'recording' ? 'recordings' : 'captures'}/${encodeURIComponent(item.filename)}`;
+            const fecha = new Date(item.timestamp * 1000).toLocaleString();
+            const peso = item.size_bytes > 1048576
+                ? `${(item.size_bytes / 1048576).toFixed(1)} MB`
+                : `${Math.max(1, Math.round(item.size_bytes / 1024))} KB`;
+            const vista = tipo === 'recording'
+                ? `<video src="${esc(url)}" preload="metadata" muted></video>`
+                : `<img src="${esc(url)}" alt="" loading="lazy">`;
+            return `
+                <figure class="cam-media" data-media-type="${tipo}" data-media-file="${esc(item.filename)}">
+                    ${vista}
+                    <button type="button" class="cam-media-del" data-media-del title="${tr('deleteLabel')}">${ICON_TRASH}</button>
+                    <figcaption>${esc(fecha)} · ${esc(peso)}</figcaption>
+                    <div class="cam-media-confirm" hidden>
+                        <span>${tr('deleteConfirmShort')}</span>
+                        <div>
+                            <button type="button" class="cam-media-yes" data-media-yes>${tr('deleteLabel')}</button>
+                            <button type="button" class="cam-media-no" data-media-no>${tr('cancelLabel')}</button>
+                        </div>
+                    </div>
+                </figure>`;
+        }
+
+        async function cargarMedia(overlay) {
+            const tira = overlay.querySelector('[data-cam-media-strip]');
+            if (!tira) return;
+            let capturas = [], grabaciones = [];
+            try {
+                const [c, g] = await Promise.all([
+                    api(`/api/cameras/${camera.id}/captures?limit=40`),
+                    api(`/api/cameras/${camera.id}/recordings?limit=40`).catch(() => ({ recordings: [] })),
+                ]);
+                capturas = c.captures || [];
+                grabaciones = g.recordings || [];
+            } catch (_) { /* sin material: se dice, no se deja el hueco */ }
+
+            const items = [
+                ...grabaciones.map(r => ({ ...r, tipo: 'recording' })),
+                ...capturas.map(c => ({ ...c, tipo: 'capture' })),
+            ].sort((a, b) => b.timestamp - a.timestamp);
+
+            tira.innerHTML = items.length
+                ? items.map(i => tarjetaMedia(camera, i, i.tipo)).join('')
+                : `<p class="cam-media-empty">${tr('noMediaYet')}</p>`;
+        }
+
+        function abrirVisorAmpliado() {
+            if (!camera) return;
+            const overlay = document.createElement('div');
+            overlay.className = 'cam-expand-overlay';
+            overlay.innerHTML = `
+                <div class="cam-expand-backdrop" data-cam-expand-close></div>
+                <div class="cam-expand-dialog" role="dialog" aria-modal="true">
+                    <div class="cam-expand-head">
+                        <span class="cam-expand-title">${ICON_CAMERA}<strong>${esc(camera.name)}</strong></span>
+                        <button type="button" class="cam-expand-close" data-cam-expand-close title="${tr('closeLabel')}">${ICON_CLOSE}</button>
+                    </div>
+                    <div class="cam-expand-stage">
+                        <img class="cam-live-img cam-expand-img" src="${esc(camera.stream_url)}" alt="${esc(camera.name)}">
+                        <span class="cam-live-badge">LIVE</span>
+                    </div>
+                    <div class="cam-expand-controls">
+                        <button type="button" class="cam-expand-btn" data-cam-action="capture">${ICON_CAPTURE}<span>${tr('captureLabel')}</span></button>
+                        <button type="button" class="cam-expand-btn cam-expand-btn-rec" data-cam-action="record">${ICON_RECORD}<span>${tr('recordLabel')}</span></button>
+                        <button type="button" class="cam-expand-btn" data-cam-action="pause">${ICON_PAUSE}<span>${tr('timelapseShortLabel')}</span></button>
+                        <button type="button" class="cam-expand-btn" data-cam-action="settings">${ICON_SETTINGS}<span>${tr('configureTimelapseTitle')}</span></button>
+                    </div>
+                    <div class="cam-expand-media" data-cam-media-strip></div>
+                </div>`;
+            document.body.appendChild(overlay);
+            overlay.querySelectorAll('.cam-live-img').forEach(watchStream);
+            bindEvents(overlay.querySelector('.cam-expand-dialog'));
+
+            const cerrar = () => {
+                document.removeEventListener('keydown', porTecla);
+                overlay.remove();
+            };
+            // Escape cierra: es lo que la mano espera de algo que ocupa la
+            // pantalla, y evita quedar atrapado si el botón queda fuera de
+            // vista en una pantalla chica.
+            const porTecla = evento => { if (evento.key === 'Escape') cerrar(); };
+            document.addEventListener('keydown', porTecla);
+            overlay.querySelectorAll('[data-cam-expand-close]').forEach(b => b.addEventListener('click', cerrar));
+
+            // Borrar pide confirmación SOBRE la propia miniatura, no en una
+            // ventana aparte: la pregunta se responde donde se hizo, y se ve
+            // qué se va a borrar mientras se decide.
+            overlay.addEventListener('click', async evento => {
+                const figura = evento.target.closest('.cam-media');
+                if (!figura) return;
+                if (evento.target.closest('[data-media-del]')) {
+                    figura.querySelector('.cam-media-confirm').hidden = false;
+                    return;
+                }
+                if (evento.target.closest('[data-media-no]')) {
+                    figura.querySelector('.cam-media-confirm').hidden = true;
+                    return;
+                }
+                if (evento.target.closest('[data-media-yes]')) {
+                    const tipo = figura.dataset.mediaType === 'recording' ? 'recordings' : 'captures';
+                    try {
+                        await api(`/api/cameras/${camera.id}/${tipo}/${encodeURIComponent(figura.dataset.mediaFile)}`,
+                                  { method: 'DELETE' });
+                        figura.remove();
+                    } catch (error) {
+                        toast(error.message, 'error');
+                        figura.querySelector('.cam-media-confirm').hidden = true;
+                    }
+                }
+            });
+
+            cargarMedia(overlay);
+        }
+
         function bindEvents(cardEl) {
             cardEl.addEventListener('click', async event => {
                 const btn = event.target.closest('[data-cam-action]');
@@ -539,8 +682,7 @@
                     } else if (action === 'toggle-focus') {
                         cardEl.querySelector('[data-cam-focus-popover]')?.toggleAttribute('hidden');
                     } else if (action === 'fullscreen') {
-                        const img = cardEl.querySelector('.cam-live-img');
-                        img?.requestFullscreen?.().catch(() => toast(tr('fullscreenNotAllowed'), 'error'));
+                        abrirVisorAmpliado();
                     } else if (action === 'settings') {
                         // Por default manda a la sección del plugin (donde vive
                         // el editor de nombre/propósito/vínculo) -- si el

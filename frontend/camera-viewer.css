@@ -847,3 +847,113 @@
     .cam-overlay-btn span { display: none; }
     .cam-overlay-btn { padding: 9px 4px; }
 }
+
+/* ── Visor ampliado ───────────────────────────────────────────────────────
+   Video grande, sus controles debajo y la tira de material al pie. Ocupa
+   casi toda la pantalla pero no toda: el borde del fondo recuerda que se
+   puede cerrar haciendo clic fuera. */
+.cam-expand-overlay { position: fixed; inset: 0; z-index: 10060; display: grid; place-items: center; padding: 24px; }
+.cam-expand-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 12, .8); backdrop-filter: blur(6px); }
+.cam-expand-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(1180px, 94vw);
+    max-height: 92vh;
+    padding: 18px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 20px;
+    background: linear-gradient(150deg, rgba(15, 23, 32, .98), rgba(9, 15, 23, .99));
+    box-shadow: 0 30px 90px rgba(0, 0, 0, .6);
+    overflow: auto;
+}
+.cam-expand-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cam-expand-title { display: inline-flex; align-items: center; gap: 9px; color: #e2e8f0; font-size: 1.05rem; }
+.cam-expand-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; padding: 0;
+    border: 1px solid rgba(148, 163, 184, .28);
+    border-radius: 10px;
+    background: rgba(148, 163, 184, .1);
+    color: #cbd5e1; cursor: pointer;
+}
+.cam-expand-close:hover { background: rgba(248, 113, 113, .18); border-color: rgba(248, 113, 113, .5); color: #fecaca; }
+
+.cam-expand-stage { position: relative; border-radius: 14px; overflow: hidden; background: #06090f; }
+.cam-expand-img { display: block; width: 100%; max-height: 58vh; object-fit: contain; }
+
+/* Controles debajo del video, no encima: acá hay sitio de sobra y taparlo
+   sería esconder la imagen que se vino a ver en grande. */
+.cam-expand-controls { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.cam-expand-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    border-radius: 12px;
+    background: rgba(148, 163, 184, .08);
+    color: #e2e8f0;
+    font-size: .72rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+.cam-expand-btn:hover { background: rgba(148, 163, 184, .18); border-color: rgba(148, 163, 184, .38); }
+.cam-expand-btn-rec { color: #fca5a5; }
+.cam-expand-btn-rec[data-cam-recording="true"] { background: rgba(239, 68, 68, .85); border-color: rgba(239, 68, 68, .85); color: #fff; }
+
+/* Tira de capturas, timelapses y grabaciones. */
+.cam-expand-media {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 10px;
+    padding-top: 4px;
+}
+.cam-media {
+    position: relative;
+    margin: 0;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(2, 6, 12, .5);
+}
+.cam-media img, .cam-media video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.cam-media figcaption { padding: 6px 8px; font-size: .66rem; color: #94a3b8; }
+.cam-media-del {
+    position: absolute; top: 6px; right: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; padding: 0;
+    border: 1px solid rgba(148, 163, 184, .3);
+    border-radius: 8px;
+    background: rgba(2, 6, 12, .72);
+    color: #cbd5e1; cursor: pointer;
+    opacity: 0; transition: opacity .15s ease, background .15s ease, color .15s ease;
+}
+.cam-media:hover .cam-media-del, .cam-media-del:focus-visible { opacity: 1; }
+.cam-media-del:hover { background: rgba(239, 68, 68, .85); border-color: rgba(239, 68, 68, .9); color: #fff; }
+
+/* La confirmación va SOBRE la propia miniatura: la pregunta se responde
+   donde se hizo, y se sigue viendo qué se va a borrar mientras se decide. */
+.cam-media-confirm {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    padding: 10px;
+    background: rgba(2, 6, 12, .88);
+    backdrop-filter: blur(3px);
+    color: #e2e8f0; font-size: .74rem; text-align: center;
+}
+.cam-media-confirm[hidden] { display: none; }
+.cam-media-confirm div { display: flex; gap: 7px; }
+.cam-media-confirm button {
+    padding: 6px 13px; border-radius: 8px; border: 1px solid transparent;
+    font-size: .68rem; font-weight: 700; cursor: pointer;
+}
+.cam-media-yes { background: #ef4444; color: #fff; }
+.cam-media-yes:hover { background: #dc2626; }
+.cam-media-no { background: rgba(148, 163, 184, .16); color: #e2e8f0; border-color: rgba(148, 163, 184, .3); }
+.cam-media-no:hover { background: rgba(148, 163, 184, .28); }
+.cam-media-empty { grid-column: 1 / -1; margin: 0; padding: 18px; text-align: center; color: #64748b; font-size: .8rem; }
+
+@media (max-width: 640px) {
+    .cam-expand-controls { grid-auto-flow: row; }
+    .cam-expand-btn span { font-size: .68rem; }
+}
