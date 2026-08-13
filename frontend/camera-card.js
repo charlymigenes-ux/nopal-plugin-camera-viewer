@@ -660,6 +660,13 @@
             cardEl.addEventListener('click', async event => {
                 const btn = event.target.closest('[data-cam-action]');
                 if (!btn || !camera) return;
+                // Esta tarjeta se monta DENTRO de la ficha de cualquier máquina
+                // (dev-card, printer-card...), que a su vez tiene su propio
+                // click en toda la tarjeta para abrir el panel/sección completa.
+                // Sin esto, ampliar/capturar/grabar/configurar la cámara también
+                // disparaba esa navegación por encima -- el botón hacía lo suyo
+                // Y ADEMÁS mandaba a otro lado.
+                event.stopPropagation();
                 const action = btn.dataset.camAction;
                 try {
                     if (action === 'capture') {
