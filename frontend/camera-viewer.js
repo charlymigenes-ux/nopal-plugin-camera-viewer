@@ -270,7 +270,7 @@
         // inyecta por su cuenta), así que hay que bumpear este número cada
         // vez que cambie camera-card.js o el navegador sigue sirviendo una
         // copia vieja cacheada indefinidamente.
-        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js?v=1.5.0';
+        cardScript.src = '/plugins-static/camera-viewer/frontend/camera-card.js?v=1.6.0';
         document.body.appendChild(cardScript);
     }
 

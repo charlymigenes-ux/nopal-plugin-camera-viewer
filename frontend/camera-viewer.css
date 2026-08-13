@@ -777,3 +777,34 @@
     line-height: 1.35;
     text-align: center;
 }
+
+/* Barra de controles de la cámara compacta (la que va dentro de la ficha de
+   cada máquina). Oscura y pegada bajo la imagen, como en la referencia. */
+.cam-card-compact { display: flex; flex-direction: column; }
+.cam-compact-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px;
+    background: rgba(0, 0, 0, .72);
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+}
+.cam-compact-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: rgba(255, 255, 255, .82);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.cam-compact-btn:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+.cam-compact-btn[data-cam-action="record"] { color: #f87171; }
+.cam-compact-btn:disabled { opacity: .45; cursor: default; }

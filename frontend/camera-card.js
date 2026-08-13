@@ -38,6 +38,7 @@
     // BOUND_DEVICE_SOURCES más abajo) y no comparte ámbito con su tr()/lang().
     const I18N = {
         es: {
+            timelapsePauseLabel: 'Pausar timelapse',
             cameraOfflineHint: 'La cámara no está entregando video.',
             liveViewLabel: 'Vista en vivo',
             operationCouldNotComplete: 'La operación no se pudo completar.',
@@ -57,6 +58,7 @@
             videoAssembled: 'Video armado: {filename}',
         },
         en: {
+            timelapsePauseLabel: 'Pause timelapse',
             cameraOfflineHint: 'The camera is not delivering video.',
             liveViewLabel: 'Live view',
             operationCouldNotComplete: 'The operation could not be completed.',
@@ -76,6 +78,7 @@
             videoAssembled: 'Video assembled: {filename}',
         },
         de: {
+            timelapsePauseLabel: 'Zeitraffer pausieren',
             cameraOfflineHint: 'Die Kamera liefert kein Video.',
             liveViewLabel: 'Live-Ansicht',
             operationCouldNotComplete: 'Der Vorgang konnte nicht abgeschlossen werden.',
@@ -95,6 +98,7 @@
             videoAssembled: 'Video erstellt: {filename}',
         },
         fr: {
+            timelapsePauseLabel: 'Mettre en pause le timelapse',
             cameraOfflineHint: 'La caméra ne fournit pas de vidéo.',
             liveViewLabel: 'Vue en direct',
             operationCouldNotComplete: "L'opération n'a pas pu être terminée.",
@@ -159,6 +163,7 @@
     const ICON_PLAY = icon('<polygon points="5 3 19 12 5 21 5 3"/>', 14);
     const ICON_CAPTURE = icon('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>', 14);
     const ICON_RECORD = icon('<circle cx="12" cy="12" r="8"/>', 14);
+    const ICON_FULLSCREEN = icon('<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>', 14);
     const ICON_STOP = icon('<rect x="6" y="6" width="12" height="12" rx="1"/>', 14);
     const ICON_EXPAND = icon('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>', 14);
     const ICON_OVERLAY = icon('<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/>', 14);
@@ -296,11 +301,24 @@
     }
 
     function compactCardHtml(camera) {
+        // Barra de controles bajo la imagen. Solo lo que de verdad hace
+        // algo: capturar, grabar y pantalla completa tienen endpoint, y la
+        // pausa es la del TIMELAPSE -- se rotula así, no como "pausar
+        // video", porque el stream no se pausa desde acá.
+        //
+        // No hay botón de audio: el stream es MJPEG y no lleva sonido. Un
+        // control que nunca podría funcionar no se dibuja ni apagado.
         return `
             <div class="cam-card cam-card-compact" data-cam-id="${esc(camera.id)}">
                 <div class="cam-live-wrap">
                     <img class="cam-live-img" src="${esc(camera.stream_url)}" alt="${esc(camera.name)}" loading="lazy">
                     <span class="cam-live-badge">LIVE</span>
+                </div>
+                <div class="cam-compact-bar">
+                    <button type="button" class="cam-compact-btn" data-cam-action="capture" title="${tr('captureLabel')}">${ICON_CAPTURE}</button>
+                    <button type="button" class="cam-compact-btn" data-cam-action="record" title="${tr('recordLabel')}">${ICON_RECORD}</button>
+                    <button type="button" class="cam-compact-btn" data-cam-action="pause" title="${tr('timelapsePauseLabel')}">${ICON_PAUSE}</button>
+                    <button type="button" class="cam-compact-btn" data-cam-action="fullscreen" title="${tr('fullscreenLabel')}">${ICON_FULLSCREEN}</button>
                 </div>
             </div>`;
     }
@@ -615,6 +633,7 @@
             container.innerHTML = compact ? compactCardHtml(camera) : fullCardHtml(camera);
             container.querySelectorAll('.cam-live-img').forEach(watchStream);
             const cardEl = container.querySelector('.cam-card');
+            if (compact && cardEl) bindEvents(cardEl);
             if (!compact && cardEl) {
                 bindEvents(cardEl);
                 await loadFocusSupport(cardEl);
