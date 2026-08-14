@@ -1066,6 +1066,13 @@
         root = null;
     }
 
+    // NOPAL core dispara este evento al cambiar de idioma (ver setLanguage()
+    // en translations.js) -- sin esto, la ficha ya montada se quedaba en el
+    // idioma con el que abrió hasta navegar a otra sección y volver (issue
+    // #50). render() (renderGrid) asume `root` montado, por eso el guard
+    // acá en vez de adentro.
+    window.addEventListener('nopal:language-changed', () => { if (root) render(); });
+
     window.NopalPluginRegistry = window.NopalPluginRegistry || {};
     window.NopalPluginRegistry[PLUGIN_ID] = { mount, unmount, version: PLUGIN_VERSION };
     mount();

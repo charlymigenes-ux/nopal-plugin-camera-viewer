@@ -830,16 +830,22 @@
             pollTimer = null;
         }
 
-        return { start, stop };
+        return { start, stop, render };
     }
 
     const instancesByContainer = new WeakMap();
+    // Este componente se monta varias veces a la vez (una por cada ficha de
+    // máquina con cámara vinculada) -- un WeakMap no se puede recorrer, así
+    // que se necesita este Set aparte solo para poder avisarles a todas las
+    // instancias vivas cuando cambia el idioma (ver el listener abajo).
+    const activeInstances = new Set();
 
     function mount(container, opts) {
         if (!container) return;
         unmount(container);
         const instance = createInstance(container, opts);
         instancesByContainer.set(container, instance);
+        activeInstances.add(instance);
         instance.start();
     }
 
@@ -849,8 +855,17 @@
         if (existing) {
             existing.stop();
             instancesByContainer.delete(container);
+            activeInstances.delete(existing);
         }
     }
+
+    // NOPAL core dispara este evento al cambiar de idioma (ver setLanguage()
+    // en translations.js) -- sin esto, cada cámara ya montada dentro de una
+    // ficha se quedaba en el idioma con el que se montó hasta que esa ficha
+    // se volvía a dibujar por otro motivo (issue #50).
+    window.addEventListener('nopal:language-changed', () => {
+        activeInstances.forEach(instance => instance.render());
+    });
 
     window.NopalCameraCard = { mount, unmount };
 })();
