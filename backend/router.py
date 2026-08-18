@@ -1,3 +1,4 @@
+import io
 import os
 import uuid
 from typing import Optional
@@ -8,7 +9,15 @@ from fastapi.responses import FileResponse, StreamingResponse
 from backend.auth_deps import require_auth, require_role
 
 from .services import timelapse_service, usb_camera_service
-from .services.camera_service import get_camera_by_id, get_cameras, register_camera, unregister_camera, update_camera
+from .services.camera_service import (
+    duplicate_camera,
+    get_camera_by_id,
+    get_camera_health,
+    get_cameras,
+    register_camera,
+    unregister_camera,
+    update_camera,
+)
 from .services.onvif_service import resolve_rtsp_uri_autoscan, resolve_rtsp_uri_from_url
 
 router = APIRouter()
@@ -82,6 +91,7 @@ async def camera_update_endpoint(
     purpose_note: Optional[str] = Form(None),
     bound_device_type: Optional[str] = Form(None),
     bound_device_id: Optional[str] = Form(None),
+    enabled: Optional[bool] = Form(None),
     user: dict = Depends(require_role("admin")),
 ):
     if not name.strip():
@@ -91,15 +101,35 @@ async def camera_update_endpoint(
         if bound_device_type and bound_device_id
         else None
     )
-    entry = update_camera(camera_id, name.strip(), purpose, purpose_note, bound_device)
+    entry = update_camera(camera_id, name.strip(), purpose, purpose_note, bound_device, enabled=enabled)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Cámara no encontrada")
+    return entry
+
+
+@router.get("/api/cameras/{camera_id}/health")
+async def camera_health_endpoint(camera_id: str, user: dict = Depends(require_auth)):
+    """Prueba real de conexión de UNA cámara (botón "Probar conexión" /
+    estado de la fila en la lista) -- no persiste nada."""
+    health = get_camera_health(camera_id)
+    if health is None:
+        raise HTTPException(status_code=404, detail="Cámara no encontrada")
+    return health
+
+
+@router.post("/api/cameras/{camera_id}/duplicate")
+async def camera_duplicate_endpoint(camera_id: str, name: str = Form(...), user: dict = Depends(require_role("admin"))):
+    if not name.strip():
+        raise HTTPException(status_code=400, detail="El nombre es obligatorio")
+    entry = duplicate_camera(camera_id, name.strip())
     if entry is None:
         raise HTTPException(status_code=404, detail="Cámara no encontrada")
     return entry
 
 
 @router.post("/api/cameras/remove")
-async def camera_remove_endpoint(id: str = Form(...), user: dict = Depends(require_role("admin"))):
-    if not await unregister_camera(id):
+async def camera_remove_endpoint(id: str = Form(...), delete_files: bool = Form(False), user: dict = Depends(require_role("admin"))):
+    if not await unregister_camera(id, delete_files=delete_files):
         raise HTTPException(status_code=404, detail="Cámara no encontrada")
     return {"success": True}
 
@@ -206,14 +236,65 @@ async def camera_timelapse_resume_endpoint(camera_id: str, user: dict = Depends(
     return config
 
 
+def _parse_filenames_form(filenames: Optional[str]) -> Optional[list]:
+    """`filenames` llega como string separado por comas (mismo estilo Form
+    simple que ya usa el resto de este archivo, sin introducir un modelo
+    Pydantic nuevo solo para esto) -- None/vacío = "todas las capturas"
+    (comportamiento de siempre de Armar timelapse); con datos = selección
+    manual en ese orden (flujo Juntar)."""
+    if not filenames:
+        return None
+    return [f.strip() for f in filenames.split(",") if f.strip()]
+
+
 @router.post("/api/cameras/{camera_id}/timelapse/assemble")
-async def camera_timelapse_assemble_endpoint(camera_id: str, user: dict = Depends(require_role("admin"))):
+async def camera_timelapse_assemble_endpoint(
+    camera_id: str, filenames: Optional[str] = Form(None), user: dict = Depends(require_role("admin"))
+):
     _require_camera(camera_id)
     try:
-        path = await timelapse_service.assemble_timelapse_video(camera_id)
+        path = await timelapse_service.assemble_timelapse_video(camera_id, _parse_filenames_form(filenames))
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"filename": os.path.basename(path)}
+
+
+@router.post("/api/cameras/{camera_id}/timelapse/assemble-gif")
+async def camera_timelapse_assemble_gif_endpoint(
+    camera_id: str, filenames: Optional[str] = Form(None), user: dict = Depends(require_role("admin"))
+):
+    _require_camera(camera_id)
+    try:
+        path = await timelapse_service.assemble_timelapse_gif(camera_id, _parse_filenames_form(filenames))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"filename": os.path.basename(path)}
+
+
+@router.get("/api/cameras/{camera_id}/timelapse/videos")
+async def camera_timelapse_videos_list_endpoint(camera_id: str, limit: Optional[int] = None, user: dict = Depends(require_auth)):
+    """Videos/GIFs ya armados. Antes de esto, assemble solo devolvía un
+    filename en la respuesta del POST y el archivo quedaba huérfano en
+    disco -- sin esto no había forma de volver a verlo/descargarlo/borrarlo."""
+    _require_camera(camera_id)
+    return {"videos": timelapse_service.list_assembled_videos(camera_id, limit=limit)}
+
+
+@router.get("/api/cameras/{camera_id}/timelapse/videos/{filename}")
+async def camera_timelapse_video_file_endpoint(camera_id: str, filename: str, user: dict = Depends(require_auth)):
+    path = timelapse_service.get_assembled_video_file_path(camera_id, filename)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Video no encontrado")
+    media_type = "image/gif" if filename.endswith(".gif") else "video/mp4"
+    return FileResponse(path, media_type=media_type)
+
+
+@router.delete("/api/cameras/{camera_id}/timelapse/videos/{filename}")
+async def camera_timelapse_video_delete_endpoint(camera_id: str, filename: str, user: dict = Depends(require_role("admin"))):
+    _require_camera(camera_id)
+    if not timelapse_service.delete_assembled_video(camera_id, filename):
+        raise HTTPException(status_code=404, detail="Video no encontrado")
+    return {"deleted": filename}
 
 
 @router.get("/api/cameras/{camera_id}/timelapse/stats")
@@ -253,6 +334,49 @@ async def camera_capture_delete_endpoint(camera_id: str, filename: str, user: di
     if not timelapse_service.delete_capture(camera_id, filename):
         raise HTTPException(status_code=404, detail="Captura no encontrada")
     return {"deleted": filename}
+
+
+@router.post("/api/cameras/{camera_id}/captures/{filename}/edit")
+async def camera_capture_edit_endpoint(
+    camera_id: str,
+    filename: str,
+    rotate: int = Form(0),
+    crop_left: Optional[int] = Form(None),
+    crop_top: Optional[int] = Form(None),
+    crop_right: Optional[int] = Form(None),
+    crop_bottom: Optional[int] = Form(None),
+    save_as_copy: bool = Form(False),
+    user: dict = Depends(require_role("admin")),
+):
+    """Rotar (múltiplo de 90°) y/o recortar una captura ya guardada."""
+    _require_camera(camera_id)
+    crop = None
+    if None not in (crop_left, crop_top, crop_right, crop_bottom):
+        crop = {"left": crop_left, "top": crop_top, "right": crop_right, "bottom": crop_bottom}
+    try:
+        result_filename = timelapse_service.edit_capture(
+            camera_id, filename, rotate=rotate, crop=crop, save_as_copy=save_as_copy
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if result_filename is None:
+        raise HTTPException(status_code=404, detail="Captura no encontrada")
+    return {"filename": result_filename}
+
+
+@router.post("/api/cameras/{camera_id}/captures/zip")
+async def camera_captures_zip_endpoint(camera_id: str, filenames: str = Form(...), user: dict = Depends(require_auth)):
+    """ZIP de varias capturas ya existentes -- no muta ni genera archivos
+    nuevos en disco (arma los bytes al vuelo), por eso alcanza con
+    require_auth en vez de admin, igual que ver/descargar una captura
+    individual."""
+    _require_camera(camera_id)
+    names = _parse_filenames_form(filenames) or []
+    if not names:
+        raise HTTPException(status_code=400, detail="No se indicaron capturas para exportar")
+    zip_bytes = timelapse_service.build_captures_zip(camera_id, names)
+    headers = {"Content-Disposition": f'attachment; filename="capturas_{camera_id}.zip"'}
+    return StreamingResponse(io.BytesIO(zip_bytes), media_type="application/zip", headers=headers)
 
 
 @router.get("/api/cameras/{camera_id}/recordings")

@@ -49,6 +49,34 @@
             configureCameraTitle: 'Configurar cámara', configureCameraSubtitle: 'Define el propósito y la captura de tu cámara.',
             cameraNameUpper: 'NOMBRE DE LA CÁMARA', nameHelpsIdentify: 'Este nombre te ayudará a identificarla fácilmente.',
             deleteCameraLabel: 'Eliminar cámara', saveBtn: 'Guardar',
+            searchCameraPlaceholder: 'Buscar cámara...',
+            statusAllOption: 'Estado: Todas', statusOnlineOption: 'En línea', statusOfflineOption: 'Desconectadas', statusDisabledOption: 'Deshabilitadas',
+            sourceAllOption: 'Tipo: Todas', sourceUsbOption: 'USB', sourceRtspOption: 'RTSP', sourceHttpOption: 'HTTP',
+            camerasCountLabel: '{count} cámaras', cameraCountLabel: '1 cámara',
+            noCamerasRegistered: 'No hay cámaras registradas', addFirstCameraBtn: 'Agregar primera cámara',
+            selectCameraHint: 'Seleccioná una cámara de la lista para administrarla.',
+            viewBtn: 'Ver', editBtn: 'Editar', duplicateBtn: 'Duplicar', deleteBtn: 'Eliminar', downloadBtn: 'Descargar',
+            tabGeneral: 'General', tabTimelapse: 'Timelapse', backToListLabel: 'Volver a la lista',
+            typeFieldLabel: 'Tipo / Fuente',
+            statusFieldLabel: 'Estado',
+            statsTitle: 'Estadísticas', capturesStatLabel: 'Capturas', timelapsesStatLabel: 'Timelapses', storageStatLabel: 'Almacenamiento',
+            savedTimelapsesTitle: 'Timelapses guardados', noVideosYetShort: 'Sin timelapses guardados todavía.',
+            confirmDeleteVideo: '¿Borrar "{name}"? Esta acción no se puede deshacer.',
+            cameraActiveTitle: 'Cámara activa', cameraActiveHint: 'Permite capturar y grabar desde esta cámara.',
+            timelapseActiveTitle: 'Timelapse activo', timelapseActiveHint: 'Empieza a capturar fotogramas con el intervalo configurado abajo.',
+            timelapseStateActive: 'Capturando', timelapseStatePaused: 'Pausado', timelapseStateOff: 'Inactivo',
+            pauseTimelapseBtn: 'Pausar', resumeTimelapseBtn: 'Reanudar',
+            timelapseOffHint: 'El timelapse de esta cámara está apagado.', goToGeneralBtn: 'Activarlo en General',
+            testConnectionBtn: 'Probar conexión', testingConnectionLabel: 'Probando…',
+            testConnectionOnline: 'Conectada correctamente.', testConnectionOffline: 'No se pudo conectar con la fuente.',
+            saveChangesBtn: 'Guardar cambios', unsavedChangesConfirm: 'Hay cambios sin guardar en esta cámara. ¿Descartarlos y continuar?',
+            duplicateNamePrompt: 'Nombre para la copia:', duplicateSuffix: ' (copia)',
+            deleteCameraConfirmTitle: 'Eliminar {name}',
+            deleteCameraConfirmBody: 'Esta cámara tiene {captures} capturas, {timelapses} timelapses y {storage} de almacenamiento.',
+            deleteCameraOnlyBtn: 'Eliminar cámara', deleteCameraWithFilesBtn: 'Eliminar cámara y sus archivos',
+            cameraDeleted: '{name}: cámara eliminada.',
+            unboundLabel: 'Sin vincular', removeBindingBtn: 'Quitar vínculo',
+            usbTypeLabel: 'USB', rtspTypeLabel: 'RTSP', httpTypeLabel: 'HTTP',
         },
         en: {
             operationCouldNotComplete: 'The operation could not be completed.',
@@ -95,6 +123,34 @@
             configureCameraTitle: 'Configure camera', configureCameraSubtitle: 'Define the purpose and capture settings of your camera.',
             cameraNameUpper: 'CAMERA NAME', nameHelpsIdentify: 'This name will help you identify it easily.',
             deleteCameraLabel: 'Delete camera', saveBtn: 'Save',
+            searchCameraPlaceholder: 'Search camera...',
+            statusAllOption: 'Status: All', statusOnlineOption: 'Online', statusOfflineOption: 'Offline', statusDisabledOption: 'Disabled',
+            sourceAllOption: 'Type: All', sourceUsbOption: 'USB', sourceRtspOption: 'RTSP', sourceHttpOption: 'HTTP',
+            camerasCountLabel: '{count} cameras', cameraCountLabel: '1 camera',
+            noCamerasRegistered: 'No cameras registered', addFirstCameraBtn: 'Add first camera',
+            selectCameraHint: 'Select a camera from the list to manage it.',
+            viewBtn: 'View', editBtn: 'Edit', duplicateBtn: 'Duplicate', deleteBtn: 'Delete', downloadBtn: 'Download',
+            tabGeneral: 'General', tabTimelapse: 'Timelapse', backToListLabel: 'Back to list',
+            typeFieldLabel: 'Type / Source',
+            statusFieldLabel: 'Status',
+            statsTitle: 'Statistics', capturesStatLabel: 'Captures', timelapsesStatLabel: 'Timelapses', storageStatLabel: 'Storage',
+            savedTimelapsesTitle: 'Saved timelapses', noVideosYetShort: 'No timelapses saved yet.',
+            confirmDeleteVideo: 'Delete "{name}"? This cannot be undone.',
+            cameraActiveTitle: 'Camera active', cameraActiveHint: 'Allows capturing and recording from this camera.',
+            timelapseActiveTitle: 'Timelapse active', timelapseActiveHint: 'Starts capturing frames at the interval configured below.',
+            timelapseStateActive: 'Capturing', timelapseStatePaused: 'Paused', timelapseStateOff: 'Off',
+            pauseTimelapseBtn: 'Pause', resumeTimelapseBtn: 'Resume',
+            timelapseOffHint: 'This camera\'s timelapse is off.', goToGeneralBtn: 'Turn it on in General',
+            testConnectionBtn: 'Test connection', testingConnectionLabel: 'Testing…',
+            testConnectionOnline: 'Connected successfully.', testConnectionOffline: 'Could not connect to the source.',
+            saveChangesBtn: 'Save changes', unsavedChangesConfirm: 'There are unsaved changes for this camera. Discard them and continue?',
+            duplicateNamePrompt: 'Name for the copy:', duplicateSuffix: ' (copy)',
+            deleteCameraConfirmTitle: 'Delete {name}',
+            deleteCameraConfirmBody: 'This camera has {captures} captures, {timelapses} timelapses and {storage} of storage.',
+            deleteCameraOnlyBtn: 'Delete camera', deleteCameraWithFilesBtn: 'Delete camera and its files',
+            cameraDeleted: '{name}: camera deleted.',
+            unboundLabel: 'Not bound', removeBindingBtn: 'Remove binding',
+            usbTypeLabel: 'USB', rtspTypeLabel: 'RTSP', httpTypeLabel: 'HTTP',
         },
         de: {
             operationCouldNotComplete: 'Der Vorgang konnte nicht abgeschlossen werden.',
@@ -277,8 +333,23 @@
     const state = {
         cameras: [],   // /api/cameras
         loading: false,
-        gridLayout: localStorage.getItem('cv-grid-layout') || '2x2',
+        // Cámara del inspector -- SIEMPRE un id explícito, nunca una
+        // variable "activa" ambigua. Toda función que actúe sobre "la
+        // cámara del inspector" la recibe por parámetro o la lee de acá en
+        // el momento del evento, nunca la asume.
+        selectedCameraId: null,
+        search: '',
+        statusFilter: 'all', // all | online | offline | disabled
+        sourceFilter: 'all', // all | usb | rtsp | http
+        inspectorTab: 'general', // general | timelapse
+        configDirty: false,
+        healthById: {}, // camera_id -> {online, disabled} (GET /health, poll centralizado)
+        timelapseStatsById: {}, // camera_id -> GET /timelapse/stats (cacheado, se refresca al seleccionar/guardar)
+        assembledVideosByCameraId: {}, // camera_id -> GET /timelapse/videos (solo de la cámara seleccionada, ver loadAssembledVideos)
     };
+    let healthPollTimer = null;
+    let cardInstance = null; // instancia de NopalCameraCard montada para la cámara seleccionada (ver renderGeneralTab)
+    let timelapseEmbedHandle = null; // { close } del gestor embebido en el tab Timelapse (ver renderTimelapseTab)
 
     // Estado de la pestaña USB -- separado de `state` porque es efímero (se
     // resetea al cerrar el panel de alta, nunca se persiste), a diferencia
@@ -292,6 +363,7 @@
         boundId: '',
         boundOptions: [],   // impresoras/láser/CNC ya registrados, para "Timelapse de un dispositivo"
         loadingBoundOptions: false,
+        prefillName: '',    // sugerido al duplicar una cámara USB (ver duplicateCamera) -- vacío en un alta normal
     };
 
     // Estado del popup "Editar cámara" -- mismas piezas que usbState
@@ -308,6 +380,7 @@
         note: '',
         intervalS: 5,
         fps: 25,
+        timelapseEnabled: false,
         boundOptions: [],
         loadingBoundOptions: false,
     };
@@ -330,15 +403,34 @@
     const ICON_INFO = '<circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>';
     const ICON_SAVE = '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>';
     const ICON_MINUS = '<line x1="5" y1="12" x2="19" y2="12"/>';
-    const ICON_GRID_1 = '<rect x="4" y="4" width="16" height="16" rx="2"/>';
-    const ICON_GRID_2 = '<rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/>';
-    const ICON_GRID_3 = '<rect x="3" y="3" width="5" height="18" rx="1"/><rect x="9.5" y="3" width="5" height="18" rx="1"/><rect x="16" y="3" width="5" height="18" rx="1"/>';
     const ICON_REFRESH = '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>';
+    const ICON_EYE = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    const ICON_EDIT = '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>';
+    const ICON_COPY = '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/>';
+    const ICON_SEARCH = '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.7" y2="16.7"/>';
+    const ICON_MORE = '<circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/>';
+    const ICON_ARROW_LEFT = '<polyline points="15 18 9 12 15 6"/>';
+    // Mismos trazos que camera-card.js (ICON_PLAY/ICON_DOWNLOAD) -- misma
+    // identidad visual para las acciones de video en los dos lugares donde
+    // aparecen.
+    const ICON_PLAY = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    const ICON_DOWNLOAD = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>';
+    const ICON_PAUSE = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
 
     const esc = value => typeof window.escapeHtml === 'function' ? window.escapeHtml(value) : String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     const toast = (message, tone = 'success') => typeof window.showToast === 'function' ? window.showToast(message, tone) : console.log(message);
     const confirmDialog = (message, title = '') => typeof window.appConfirm === 'function' ? window.appConfirm(message, title) : Promise.resolve(window.confirm(message));
 
+    function formatBytes(bytes) {
+        const value = bytes || 0;
+        const mb = value / (1024 * 1024);
+        if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+        return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
+    }
+    function formatClock(epochSeconds) {
+        if (!epochSeconds) return '--';
+        return new Date(epochSeconds * 1000).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
     async function api(url, options = {}) {
         const response = await fetch(url, options);
         const data = await response.json().catch(() => ({}));
@@ -354,11 +446,99 @@
         try {
             const result = await api('/api/cameras');
             state.cameras = result.cameras || [];
+            // Si la cámara seleccionada ya no existe (se eliminó desde otra
+            // pestaña, por ejemplo), se cae la selección en vez de dejar el
+            // inspector mostrando un id fantasma.
+            if (state.selectedCameraId && !state.cameras.some(c => c.id === state.selectedCameraId)) {
+                state.selectedCameraId = null;
+            }
         } catch (error) {
             toast(error.message, 'error');
         }
         state.loading = false;
         render();
+        pollHealthOnce();
+    }
+
+    // ── Tipo/fuente derivado (mismo criterio en todo el archivo: nunca se
+    // persiste un campo "type", se infiere de device_path/source_url) ──
+    function deriveCameraType(camera) {
+        if (camera.device_path) return 'usb';
+        if ((camera.source_url || '').toLowerCase().startsWith('rtsp')) return 'rtsp';
+        return 'http';
+    }
+    function cameraTypeLabel(camera) {
+        const type = deriveCameraType(camera);
+        return type === 'usb' ? tr('usbTypeLabel') : type === 'rtsp' ? tr('rtspTypeLabel') : tr('httpTypeLabel');
+    }
+
+    // ── Estado real por cámara (online/offline/disabled) -- UN solo poll
+    // centralizado para toda la lista visible, no un setInterval por fila
+    // (ver sección de rendimiento del pedido). Reusa GET /health, que ya
+    // hace la misma prueba real que el backend usaba solo para el conteo
+    // agregado del dashboard. ──
+    async function pollHealthOnce() {
+        await Promise.all(state.cameras.map(async camera => {
+            try {
+                state.healthById[camera.id] = await api(`/api/cameras/${camera.id}/health`);
+            } catch (error) {
+                // Una cámara puntual fallando la prueba no debe tumbar el
+                // resto de la lista -- sin datos, se trata como desconocida.
+            }
+        }));
+        renderCameraList();
+        // Los timelapses guardados de la cámara seleccionada se refrescan en
+        // este mismo ciclo (sin poller propio): es la única forma de
+        // enterarse de que el gestor embebido en la pestaña Timelapse armó o
+        // borró un video, porque ese widget vive aparte y no avisa al padre.
+        if (state.selectedCameraId) {
+            await loadAssembledVideos(state.selectedCameraId, { quiet: true });
+            renderSavedTimelapsesList();
+        }
+    }
+    function ensureHealthPolling() {
+        if (healthPollTimer) return;
+        healthPollTimer = setInterval(pollHealthOnce, 15000);
+    }
+
+    async function loadTimelapseStats(cameraId, { quiet = false } = {}) {
+        try {
+            state.timelapseStatsById[cameraId] = await api(`/api/cameras/${cameraId}/timelapse/stats`);
+        } catch (error) {
+            if (!quiet) toast(error.message, 'error');
+        }
+    }
+
+    async function loadAssembledVideos(cameraId, { quiet = false } = {}) {
+        try {
+            const result = await api(`/api/cameras/${cameraId}/timelapse/videos`);
+            state.assembledVideosByCameraId[cameraId] = result.videos || [];
+        } catch (error) {
+            if (!quiet) toast(error.message, 'error');
+        }
+    }
+
+    function selectedCamera() {
+        return state.cameras.find(c => c.id === state.selectedCameraId) || null;
+    }
+
+    async function selectCamera(cameraId, { force = false } = {}) {
+        if (state.selectedCameraId === cameraId && !force) return;
+        if (state.configDirty && !(await confirmDialog(tr('unsavedChangesConfirm')))) return;
+        state.selectedCameraId = cameraId;
+        state.inspectorTab = 'general';
+        state.configDirty = false;
+        renderCameraList();
+        renderInspector();
+        renderSavedTimelapsesList();
+        if (cameraId) {
+            await Promise.all([
+                loadTimelapseStats(cameraId, { quiet: true }),
+                loadAssembledVideos(cameraId, { quiet: true }),
+            ]);
+        }
+        renderInspector();
+        renderSavedTimelapsesList();
     }
 
     async function addCamera(event) {
@@ -420,11 +600,108 @@
 
     async function removeCamera(camera) {
         if (!(await confirmDialog(tr('confirmRemoveCamera', { name: camera.name }), tr('removeCameraTitle')))) return;
+        await performDelete(camera.id, false);
+    }
+
+    // ── Eliminar (con o sin archivos) -- diálogo propio, no confirmDialog
+    // simple: acá hay DOS acciones destructivas distintas ("Eliminar
+    // cámara" vs. "...y sus archivos"), nunca fusionadas en una sola. ──
+    async function deleteCameraFlow(camera) {
+        if (!state.timelapseStatsById[camera.id]) await loadTimelapseStats(camera.id, { quiet: true });
+        const stats = state.timelapseStatsById[camera.id];
+        const panel = root.querySelector('#cv-delete-panel');
+        root.querySelector('#cv-delete-panel-title').textContent = tr('deleteCameraConfirmTitle', { name: camera.name });
+        const bodyEl = root.querySelector('#cv-delete-panel-body');
+        bodyEl.textContent = stats && (stats.frame_count || stats.assembled_count)
+            ? tr('deleteCameraConfirmBody', { captures: stats.frame_count, timelapses: stats.assembled_count, storage: formatBytes(stats.storage_used_bytes) })
+            : '';
+        panel.dataset.cvDeleteCamera = camera.id;
+        panel.hidden = false;
+    }
+
+    async function performDelete(cameraId, deleteFiles) {
+        const camera = state.cameras.find(c => c.id === cameraId);
         try {
-            await api('/api/cameras/remove', { method: 'POST', body: new URLSearchParams({ id: camera.id }) });
+            await api('/api/cameras/remove', { method: 'POST', body: new URLSearchParams({ id: cameraId, delete_files: String(!!deleteFiles) }) });
+            toast(tr('cameraDeleted', { name: camera?.name || '' }));
+            const deletePanel = root.querySelector('#cv-delete-panel');
+            if (deletePanel) deletePanel.hidden = true;
+            const wasSelected = state.selectedCameraId === cameraId;
             await refreshAll();
+            if (wasSelected) {
+                const next = state.cameras[0];
+                await selectCamera(next ? next.id : null, { force: true });
+            }
         } catch (error) {
             toast(error.message, 'error');
+        }
+    }
+
+    // ── Duplicar -- RTSP/HTTP/ONVIF se copian directo (mismo source_url no
+    // choca con nada); USB nunca reusa el device_path del original en
+    // silencio, se abre el alta en la pestaña USB para que el usuario elija
+    // un dispositivo físico distinto antes de poder guardar. ──
+    async function duplicateCamera(camera) {
+        if (camera.device_path) {
+            openAddPanel();
+            switchAddTab('usb');
+            usbState.purpose = camera.purpose || 'monitoring';
+            usbState.boundType = camera.bound_device?.type || '';
+            usbState.boundId = camera.bound_device?.id || '';
+            usbState.prefillName = `${camera.name}${tr('duplicateSuffix')}`;
+            renderUsbTab();
+            return;
+        }
+        const suggested = `${camera.name}${tr('duplicateSuffix')}`;
+        const name = window.prompt(tr('duplicateNamePrompt'), suggested);
+        if (!name || !name.trim()) return;
+        try {
+            const created = await api(`/api/cameras/${camera.id}/duplicate`, { method: 'POST', body: new URLSearchParams({ name: name.trim() }) });
+            toast(tr('cameraAdded', { name: created.name }));
+            await refreshAll();
+            await selectCamera(created.id, { force: true });
+        } catch (error) {
+            toast(error.message, 'error');
+        }
+    }
+
+    // ── "Cámara activa" -- distinto del enabled del timelapse. Optimista en
+    // UI, revertido si el request falla; siempre reenvía purpose/vínculo
+    // actuales porque update_camera los reescribe enteros (ver
+    // camera_service.py -- solo `enabled`/`name` son merge parcial). ──
+    async function toggleCameraEnabled(camera, enabled) {
+        const previous = camera.enabled !== false;
+        camera.enabled = enabled;
+        renderInspector();
+        const params = new URLSearchParams({ name: camera.name, enabled: String(enabled) });
+        if (camera.purpose) params.set('purpose', camera.purpose);
+        if (camera.purpose === 'other' && camera.purpose_note) params.set('purpose_note', camera.purpose_note);
+        if (camera.purpose === 'timelapse' && camera.bound_device) {
+            params.set('bound_device_type', camera.bound_device.type);
+            params.set('bound_device_id', camera.bound_device.id);
+        }
+        try {
+            await api(`/api/cameras/${camera.id}/update`, { method: 'POST', body: params });
+            await refreshAll();
+        } catch (error) {
+            camera.enabled = previous;
+            toast(error.message, 'error');
+            renderInspector();
+        }
+    }
+
+    async function testConnection(camera) {
+        const btn = root.querySelector('#cv-config-test-btn');
+        if (btn) { btn.disabled = true; btn.textContent = tr('testingConnectionLabel'); }
+        try {
+            const health = await api(`/api/cameras/${camera.id}/health`);
+            state.healthById[camera.id] = health;
+            toast(health.online ? tr('testConnectionOnline') : tr('testConnectionOffline'), health.online ? 'success' : 'error');
+        } catch (error) {
+            toast(error.message, 'error');
+        } finally {
+            renderCameraList();
+            if (state.inspectorTab === 'general') renderInspector();
         }
     }
 
@@ -534,7 +811,7 @@
         const noteSection = usbState.purpose === 'other' ? `
             <label><span>${tr('whatWillYouUseItFor')}</span><input type="text" id="cv-usb-note-input" maxlength="140" placeholder="${tr('exampleWatchWorkshop')}"></label>` : '';
         return `
-            <label><span>${tr('nameLabel')}</span><input type="text" id="cv-usb-name-input" maxlength="60" value="${esc(device.name)}"></label>
+            <label><span>${tr('nameLabel')}</span><input type="text" id="cv-usb-name-input" maxlength="60" value="${esc(usbState.prefillName || device.name)}"></label>
             <div class="cv-usb-purpose">
                 <span>${tr('whatWillYouUseItFor')}</span>
                 <label class="cv-usb-radio"><input type="radio" name="cv-usb-purpose" value="monitoring" ${usbState.purpose === 'monitoring' ? 'checked' : ''}><span>${tr('purposeMonitoring')}</span></label>
@@ -637,6 +914,10 @@
                     </select>
                 </div>
             </div>
+            <div class="cv-inspector-section cv-active-toggle">
+                <div><strong>${tr('timelapseActiveTitle')}</strong><small>${tr('timelapseActiveHint')}</small></div>
+                <label class="cv-switch"><input type="checkbox" id="cv-edit-timelapse-enabled-input" ${editState.timelapseEnabled ? 'checked' : ''}><span></span></label>
+            </div>
             <div class="cv-timelapse-params-row">
                 <div class="cv-timelapse-params-col">
                     <div class="cv-field-group">
@@ -678,6 +959,10 @@
         return purposeCards + timelapseDetails + noteSection;
     }
 
+    // El formulario de "Configuración" vive INLINE en el tab del inspector
+    // (ver renderGeneralTab) -- ya no es un overlay/modal aparte. Se pide
+    // explícitamente en el pedido de rediseño: "editar la cámara
+    // directamente desde el panel lateral sin abrir modales adicionales".
     function renderEditPanel() {
         const nameInput = root.querySelector('#cv-edit-name-input');
         if (nameInput && document.activeElement !== nameInput) nameInput.value = editState.name;
@@ -688,7 +973,7 @@
         }
     }
 
-    function openEditPanel(camera) {
+    function loadEditState(camera) {
         editState.cameraId = camera.id;
         editState.name = camera.name;
         editState.purpose = camera.purpose || 'monitoring';
@@ -700,14 +985,9 @@
         // fetch aparte para precargar estos valores.
         editState.intervalS = camera.timelapse_config?.interval_s ?? 5;
         editState.fps = camera.timelapse_config?.fps ?? 25;
+        editState.timelapseEnabled = camera.timelapse_config?.enabled ?? false;
         editState.boundOptions = [];
         editState.loadingBoundOptions = false;
-        root.querySelector('#cv-edit-panel').hidden = false;
-        renderEditPanel();
-    }
-
-    function closeEditPanel() {
-        root.querySelector('#cv-edit-panel').hidden = true;
     }
 
     async function submitCameraEdit(event) {
@@ -734,12 +1014,16 @@
                 // del POST de arriba.
                 await api(`/api/cameras/${editState.cameraId}/timelapse`, {
                     method: 'POST',
-                    body: new URLSearchParams({ interval_s: editState.intervalS, fps: editState.fps }),
+                    body: new URLSearchParams({ interval_s: editState.intervalS, fps: editState.fps, enabled: editState.timelapseEnabled }),
                 });
             }
-            closeEditPanel();
             toast(tr('cameraUpdated', { name }));
+            state.configDirty = false;
+            const savedId = editState.cameraId;
             await refreshAll();
+            // Guardar mantiene la MISMA cámara seleccionada -- nunca se
+            // pierde el contexto ni se cae de vuelta a la lista.
+            if (state.cameras.some(c => c.id === savedId)) await selectCamera(savedId, { force: true });
         } catch (error) {
             toast(error.message, 'error');
         } finally {
@@ -749,62 +1033,320 @@
 
     // ── Render ───────────────────────────────────────────────────────────
 
-    function watchStream(img) {
-        const baseSrc = img.src;
-        const scheduleRetry = () => {
-            if (!document.body.contains(img)) return;
-            setTimeout(() => {
-                if (!document.body.contains(img)) return;
-                const separator = baseSrc.includes('?') ? '&' : '?';
-                img.src = `${baseSrc}${separator}_retry=${Date.now()}`;
-            }, 5000);
-        };
-        img.addEventListener('error', () => {
-            img.closest('.cv-card')?.classList.add('is-offline');
-            scheduleRetry();
-        });
-        img.addEventListener('load', () => {
-            img.closest('.cv-card')?.classList.remove('is-offline');
+    // ── Lista compacta + inspector ──────────────────────────────────────
+    // A diferencia del grid viejo, NINGUNA fila monta camera-card.js (eso
+    // multiplicaba un stream+watcher por cámara aunque no se estuviera
+    // viendo ninguna -- justo lo que pide evitar la sección de rendimiento
+    // del pedido). El stream en vivo pesado vive UNA sola vez, en el
+    // inspector de la cámara seleccionada (ver renderGeneralTab/cardInstance).
+
+    function boundMachineCacheKey(camera) {
+        return camera.bound_device ? `${camera.bound_device.type}::${camera.bound_device.id}` : null;
+    }
+    // Mismo join en cliente que ya usa camera-card.js (resolveBoundDeviceName)
+    // -- backend no guarda el nombre legible, solo type+id crudos.
+    async function resolveBoundDeviceName(boundDevice) {
+        if (!boundDevice) return null;
+        const source = BOUND_DEVICE_SOURCES.find(s => s.type === boundDevice.type);
+        if (!source) return boundDevice.id;
+        try {
+            const data = await api(source.url);
+            const list = data[source.listKey] || [];
+            const entry = list.find(e => String(e.id ?? e.device ?? e.host ?? e.name) === String(boundDevice.id));
+            return entry?.name || boundDevice.id;
+        } catch (error) {
+            return boundDevice.id;
+        }
+    }
+
+    const boundMachineNameCache = {};
+    async function resolveBoundNameCached(camera) {
+        const key = boundMachineCacheKey(camera);
+        if (!key) return null;
+        if (key in boundMachineNameCache) return boundMachineNameCache[key];
+        const name = await resolveBoundDeviceName(camera.bound_device);
+        boundMachineNameCache[key] = name;
+        return name;
+    }
+
+    function filteredCameras() {
+        const query = state.search.trim().toLowerCase();
+        return state.cameras.filter(camera => {
+            const health = state.healthById[camera.id];
+            const disabled = camera.enabled === false;
+            const online = !disabled && !!health?.online;
+            if (state.statusFilter === 'online' && !online) return false;
+            if (state.statusFilter === 'offline' && (disabled || online)) return false;
+            if (state.statusFilter === 'disabled' && !disabled) return false;
+            if (state.sourceFilter !== 'all' && deriveCameraType(camera) !== state.sourceFilter) return false;
+            if (!query) return true;
+            const boundName = camera.bound_device ? (boundMachineNameCache[boundMachineCacheKey(camera)] || '') : '';
+            const haystack = [camera.name, camera.id, cameraTypeLabel(camera), boundName].join(' ').toLowerCase();
+            return haystack.includes(query);
         });
     }
 
-    // Cada cámara de la galería propia del plugin muestra la tarjeta
-    // completa (timelapse/grabación/enfoque/detección de movimiento/galería
-    // de capturas -- ver camera-card.js), no solo la vista en vivo chica que
-    // se usa cuando esta misma tarjeta se embebe en el panel de una máquina.
-    // Eliminar la cámara vive en el popup "Configurar cámara" (junto a
-    // Cancelar/Guardar), no como ícono suelto sobre la tarjeta -- y el
-    // engranaje de dentro de la tarjeta completa abre ese mismo popup en vez
-    // de "navegar" a esta sección (ya estamos acá).
-    function renderGrid() {
-        const grid = root.querySelector('#cv-grid');
+    function statusPillHtml(camera) {
+        const health = state.healthById[camera.id];
+        const disabled = camera.enabled === false;
+        if (disabled) return `<span class="cv-status-pill is-disabled"><span class="cv-status-dot"></span>${tr('statusDisabledOption')}</span>`;
+        if (!health) return `<span class="cv-status-pill is-unknown"><span class="cv-status-dot"></span>…</span>`;
+        return health.online
+            ? `<span class="cv-status-pill is-online"><span class="cv-status-dot"></span>${tr('statusOnlineOption')}</span>`
+            : `<span class="cv-status-pill is-offline"><span class="cv-status-dot"></span>${tr('statusOfflineOption')}</span>`;
+    }
+
+    // Ícono de tipo (USB/RTSP/HTTP), no una foto en vivo: la tarjeta anterior
+    // usaba <img src="camera.stream_url"> -- eso es un MJPEG en vivo, exactamente
+    // el "poller por fila" que el pedido original prohibió. El mosaico
+    // muestra estado real (state.healthById, poll centralizado) sin abrir
+    // una conexión de stream por tarjeta.
+    function cameraTypeIconBody(camera) {
+        const type = deriveCameraType(camera);
+        if (type === 'usb') return ICON_USB;
+        if (type === 'rtsp') return ICON_VIDEO_CAM;
+        return ICON_MONITOR;
+    }
+
+    function cameraMosaicCardHtml(camera) {
+        const isSelected = camera.id === state.selectedCameraId;
+        const boundKey = boundMachineCacheKey(camera);
+        const boundName = boundKey ? boundMachineNameCache[boundKey] : null;
+        if (boundKey && boundName === undefined) resolveBoundNameCached(camera).then(() => renderCameraList());
+        return `
+            <div class="cv-mosaic-card${isSelected ? ' selected' : ''}" data-cv-camera="${camera.id}">
+                <div class="cv-mosaic-card-icon">${icon(cameraTypeIconBody(camera), 26)}</div>
+                <div class="cv-mosaic-card-title" title="${esc(camera.name)}">${esc(camera.name)}</div>
+                ${statusPillHtml(camera)}
+                <div class="cv-mosaic-card-meta">
+                    <span class="cv-row-type">${cameraTypeLabel(camera)}</span>
+                    ${boundName ? `<span title="${esc(boundName)}">${icon(ICON_TARGET, 11)}${esc(boundName)}</span>` : ''}
+                </div>
+                <div class="cv-mosaic-card-actions">
+                    <button type="button" class="cv-row-btn" data-cv-row-action="view" title="${tr('viewBtn')}">${icon(ICON_EYE, 14)}</button>
+                    <button type="button" class="cv-row-btn" data-cv-row-action="edit" title="${tr('editBtn')}">${icon(ICON_EDIT, 14)}</button>
+                    <button type="button" class="cv-row-btn" data-cv-row-action="duplicate" title="${tr('duplicateBtn')}">${icon(ICON_COPY, 14)}</button>
+                    <button type="button" class="cv-row-btn cv-row-btn-danger" data-cv-row-action="delete" title="${tr('deleteBtn')}">${icon(ICON_TRASH, 14)}</button>
+                </div>
+            </div>`;
+    }
+
+    function renderCameraList() {
+        const listEl = root.querySelector('#cv-list-rows');
+        const countEl = root.querySelector('#cv-list-count');
+        if (!listEl) return;
+        if (countEl) countEl.textContent = state.cameras.length === 1 ? tr('cameraCountLabel') : tr('camerasCountLabel', { count: state.cameras.length });
         if (!state.cameras.length) {
-            grid.innerHTML = `<p class="cv-empty">${state.loading ? tr('loadingEllipsis') : tr('noCamerasYet')}</p>`;
+            listEl.innerHTML = state.loading
+                ? `<p class="cv-empty">${tr('loadingEllipsis')}</p>`
+                : `<div class="cv-empty-state">${icon(ICON_CAMERA, 34)}<p>${tr('noCamerasRegistered')}</p><button type="button" class="cv-btn cv-btn-accent" id="cv-empty-add-btn">${icon(ICON_PLUS, 15)}<span>${tr('addFirstCameraBtn')}</span></button></div>`;
             return;
         }
-        grid.innerHTML = state.cameras.map(camera => `
-            <div class="cv-card cv-card-full" data-cv-camera="${camera.id}">
-                <div class="cv-camera-full-mount" id="cv-full-mount-${camera.id}"></div>
-            </div>`).join('');
-        if (!window.NopalCameraCard) return;
-        state.cameras.forEach(camera => {
-            const mountEl = grid.querySelector(`#cv-full-mount-${camera.id}`);
-            if (mountEl) window.NopalCameraCard.mount(mountEl, { cameraId: camera.id, compact: false, onSettingsClick: () => openEditPanel(camera) });
-        });
+        const rows = filteredCameras();
+        listEl.innerHTML = rows.map(cameraMosaicCardHtml).join('') || `<p class="cv-empty">${tr('noCamerasYet')}</p>`;
+    }
+
+    // ── Timelapses guardados (mitad inferior del panel izquierdo, siempre de
+    // la cámara seleccionada -- ver loadAssembledVideos/pollHealthOnce) ──
+    function savedTimelapseRowHtml(camera, video) {
+        return `
+            <div class="cv-saved-tl-row" data-cv-video="${esc(video.filename)}">
+                <div class="cv-saved-tl-main">
+                    <strong>${esc(formatClock(video.timestamp))}</strong>
+                    <span>${video.kind === 'gif' ? 'GIF' : 'MP4'} · ${formatBytes(video.size_bytes)}</span>
+                </div>
+                <div class="cv-saved-tl-actions">
+                    <button type="button" class="cv-row-btn" data-cv-tl-action="view" title="${tr('viewBtn')}">${icon(ICON_PLAY, 13)}</button>
+                    <a class="cv-row-btn" href="/api/cameras/${encodeURIComponent(camera.id)}/timelapse/videos/${encodeURIComponent(video.filename)}" download title="${tr('downloadBtn')}">${icon(ICON_DOWNLOAD, 13)}</a>
+                    <button type="button" class="cv-row-btn cv-row-btn-danger" data-cv-tl-action="delete" title="${tr('deleteBtn')}">${icon(ICON_TRASH, 13)}</button>
+                </div>
+            </div>`;
+    }
+
+    function renderSavedTimelapsesList() {
+        const listEl = root.querySelector('#cv-saved-timelapses');
+        if (!listEl) return;
+        const camera = selectedCamera();
+        if (!camera) {
+            listEl.innerHTML = `<p class="cv-empty">${tr('selectCameraHint')}</p>`;
+            return;
+        }
+        const videos = state.assembledVideosByCameraId[camera.id];
+        if (videos === undefined) {
+            listEl.innerHTML = `<p class="cv-empty">${tr('loadingEllipsis')}</p>`;
+            return;
+        }
+        listEl.innerHTML = videos.length
+            ? videos.map(v => savedTimelapseRowHtml(camera, v)).join('')
+            : `<p class="cv-empty">${tr('noVideosYetShort')}</p>`;
+    }
+
+    // ── Inspector ────────────────────────────────────────────────────────
+
+    // Sin header propio arriba de las pestañas -- el nombre de la cámara ya
+    // se ve en el formulario de la pestaña General y en el header interno
+    // del gestor embebido en Timelapse; repetirlo acá era el título
+    // duplicado que se comía alto sin aportar nada.
+    function renderInspectorTabs() {
+        const tabsEl = root.querySelector('#cv-inspector-tabs');
+        if (!tabsEl) return;
+        const tabs = [
+            ['general', tr('tabGeneral'), ICON_INFO],
+            ['timelapse', tr('tabTimelapse'), ICON_CLOCK],
+        ];
+        tabsEl.innerHTML = `
+            <button type="button" class="cv-inspector-back" id="cv-inspector-back-btn" title="${esc(tr('backToListLabel'))}">${icon(ICON_ARROW_LEFT, 16)}</button>
+            ${tabs.map(([id, label, iconBody]) => `<button type="button" class="cv-inspector-tab${state.inspectorTab === id ? ' active' : ''}" data-cv-inspector-tab="${id}">${icon(iconBody, 15)}<span>${esc(label)}</span></button>`).join('')}`;
+    }
+
+    // El mount de NopalCameraCard para el preview en vivo (renderGeneralTab)
+    // sigue vivo (polling/stream) aunque su contenedor se destruya al
+    // repintar el body del inspector con innerHTML -- sin este stop()
+    // explícito antes de CADA repintado (cambio de cámara, de tab, o
+    // volver a Información), quedaban instancias huérfanas corriendo para
+    // siempre en segundo plano.
+    function stopCardInstance() {
+        if (cardInstance) { cardInstance.stop(); cardInstance = null; }
+    }
+
+    // El gestor de capturas/timelapse embebido en el tab Timelapse (ver
+    // renderTimelapseTab) tiene su propio temporizador de reproducción --
+    // mismo motivo que stopCardInstance(): innerHTML lo destruye del DOM
+    // pero no detiene su JS por sí solo.
+    function stopTimelapseEmbed() {
+        if (timelapseEmbedHandle) { timelapseEmbedHandle.close(); timelapseEmbedHandle = null; }
+    }
+
+    // Antes "Información" y "Configuración" eran dos pestañas separadas que
+    // repetían nombre/tipo/fuente/vínculo a máquina (una de solo lectura, la
+    // otra editable) -- ahora es una sola pestaña de 2 columnas: izquierda
+    // solo lectura (preview en vivo, estadísticas, ID/estado, activa/inactiva),
+    // derecha el formulario editable. Nada se repite entre ambas.
+    function renderGeneralTab(camera) {
+        stopCardInstance();
+        stopTimelapseEmbed();
+        const body = root.querySelector('#cv-inspector-body');
+        const stats = state.timelapseStatsById[camera.id];
+        loadEditState(camera);
+        body.innerHTML = `
+            <div class="cv-general-columns">
+                <div class="cv-general-col-view">
+                    <div class="cv-info-preview" id="cv-info-preview-mount"></div>
+                    <div class="cv-inspector-section">
+                        <h3>${tr('statsTitle')}</h3>
+                        <div class="cv-stats-row">
+                            <div class="cv-stat-tile"><strong>${stats ? stats.frame_count.toLocaleString() : '—'}</strong><span>${tr('capturesStatLabel')}</span></div>
+                            <div class="cv-stat-tile"><strong>${stats ? stats.assembled_count.toLocaleString() : '—'}</strong><span>${tr('timelapsesStatLabel')}</span></div>
+                            <div class="cv-stat-tile"><strong>${stats ? formatBytes(stats.storage_used_bytes) : '—'}</strong><span>${tr('storageStatLabel')}</span></div>
+                        </div>
+                    </div>
+                    <div class="cv-inspector-section">
+                        <dl class="cv-dl">
+                            <div><dt>ID</dt><dd class="cv-dl-mono">${esc(camera.id)}</dd></div>
+                            <div><dt>${tr('statusFieldLabel')}</dt><dd>${statusPillHtml(camera)}</dd></div>
+                        </dl>
+                    </div>
+                    <div class="cv-inspector-section cv-active-toggle">
+                        <div><strong>${tr('cameraActiveTitle')}</strong><small>${tr('cameraActiveHint')}</small></div>
+                        <label class="cv-switch"><input type="checkbox" id="cv-active-toggle-input" ${camera.enabled !== false ? 'checked' : ''}><span></span></label>
+                    </div>
+                </div>
+                <div class="cv-general-col-edit">
+                    <form class="cv-add-form cv-edit-form-body" id="cv-edit-form">
+                        <div class="cv-field-group">
+                            <span class="cv-field-label">${icon(ICON_TAG, 14)} ${tr('cameraNameUpper')}</span>
+                            <div class="cv-input-icon">${icon(ICON_CAMERA, 16)}<input type="text" id="cv-edit-name-input" maxlength="60" required></div>
+                            <p class="cv-field-hint">${tr('nameHelpsIdentify')}</p>
+                        </div>
+                        <div class="cv-field-group">
+                            <span class="cv-field-label">${tr('typeFieldLabel')}</span>
+                            <p class="cv-field-hint">${cameraTypeLabel(camera)} · ${esc(camera.device_path || camera.source_url || '—')}</p>
+                        </div>
+                        <hr class="cv-edit-divider">
+                        <div id="cv-edit-purpose-section"></div>
+                        <div class="cv-config-test-row">
+                            <button type="button" class="cv-btn" id="cv-config-test-btn">${icon(ICON_REFRESH, 14)}<span>${tr('testConnectionBtn')}</span></button>
+                        </div>
+                        <div class="cv-edit-footer">
+                            <button type="button" class="cv-btn" id="cv-config-cancel-btn">${icon(ICON_CLOSE, 15)}<span>${tr('cancelBtn')}</span></button>
+                            <button type="submit" class="cv-btn cv-btn-accent" id="cv-edit-submit-btn">${icon(ICON_SAVE, 15)}<span>${tr('saveChangesBtn')}</span></button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        renderEditPanel();
+
+        const mountEl = body.querySelector('#cv-info-preview-mount');
+        if (mountEl && window.NopalCameraCard) {
+            cardInstance = window.NopalCameraCard.mount(mountEl, { cameraId: camera.id, compact: true });
+        }
+    }
+
+    // El tab Timelapse no muestra un resumen con botón "Administrar": el
+    // gestor completo (visor, editar, juntar, videos armados) se embebe
+    // directo aquí vía window.NopalCameraCard.openCaptures(id, container) --
+    // mismo gestor que antes vivía en un modal, ahora inline en el inspector.
+    // Barra de estado + pausar/reanudar -- controles reales del timelapse
+    // DENTRO del plugin (antes solo existían, a medias, en la ficha
+    // compacta del dashboard). "Activar" el timelapse (el interruptor que
+    // de verdad arranca la captura) vive en General -- acá solo pausa/
+    // reanuda uno que ya está activo, por eso el botón queda deshabilitado
+    // con un atajo a General cuando no lo está.
+    function timelapseStatusBarHtml(camera) {
+        const stats = state.timelapseStatsById[camera.id];
+        if (!stats) return `<div class="cv-timelapse-status-bar"><span>${tr('loadingEllipsis')}</span></div>`;
+        if (!stats.enabled) {
+            return `
+                <div class="cv-timelapse-status-bar">
+                    <span class="cv-status-pill is-disabled"><span class="cv-status-dot"></span>${tr('timelapseStateOff')}</span>
+                    <span class="cv-timelapse-status-hint">${tr('timelapseOffHint')}</span>
+                    <button type="button" class="cv-btn cv-btn-accent" id="cv-goto-general-btn">${tr('goToGeneralBtn')}</button>
+                </div>`;
+        }
+        const paused = !!stats.paused;
+        return `
+            <div class="cv-timelapse-status-bar">
+                <span class="cv-status-pill ${paused ? 'is-disabled' : 'is-online'}"><span class="cv-status-dot"></span>${paused ? tr('timelapseStatePaused') : tr('timelapseStateActive')}</span>
+                <span class="cv-timelapse-status-hint">${tr('capturesStatLabel')}: ${stats.frame_count.toLocaleString()}</span>
+                <button type="button" class="cv-btn" id="cv-timelapse-pause-btn" data-cv-paused="${paused ? 'true' : 'false'}">${icon(paused ? ICON_PLAY : ICON_PAUSE, 14)}<span>${paused ? tr('resumeTimelapseBtn') : tr('pauseTimelapseBtn')}</span></button>
+            </div>`;
+    }
+
+    async function renderTimelapseTab(camera) {
+        stopCardInstance();
+        stopTimelapseEmbed();
+        const body = root.querySelector('#cv-inspector-body');
+        body.innerHTML = `
+            <div id="cv-timelapse-status-mount">${timelapseStatusBarHtml(camera)}</div>
+            <div class="cv-timelapse-embed-mount" id="cv-timelapse-embed-mount"></div>`;
+        const mountEl = body.querySelector('#cv-timelapse-embed-mount');
+        const handle = await window.NopalCameraCard.openCaptures(camera.id, mountEl);
+        if (state.selectedCameraId !== camera.id || state.inspectorTab !== 'timelapse') {
+            handle?.close();
+            return;
+        }
+        timelapseEmbedHandle = handle || null;
+    }
+
+    function renderInspector() {
+        const panel = root.querySelector('#cv-inspector-panel');
+        const camera = selectedCamera();
+        renderInspectorTabs();
+        panel.classList.toggle('is-empty', !camera);
+        if (!camera) {
+            stopCardInstance();
+            stopTimelapseEmbed();
+            root.querySelector('#cv-inspector-body').innerHTML = `<div class="cv-empty-state">${icon(ICON_CAMERA, 34)}<p>${tr('selectCameraHint')}</p></div>`;
+            return;
+        }
+        if (state.inspectorTab === 'general') renderGeneralTab(camera);
+        else if (state.inspectorTab === 'timelapse') renderTimelapseTab(camera);
     }
 
     function render() {
-        renderGrid();
-    }
-
-    function setLayout(mode) {
-        state.gridLayout = mode;
-        localStorage.setItem('cv-grid-layout', mode);
-        const grid = root.querySelector('#cv-grid');
-        if (grid) grid.className = `cv-grid cv-grid-${mode}`;
-        root.querySelectorAll('[data-cv-layout]').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.cvLayout === mode);
-        });
+        renderCameraList();
+        renderInspector();
+        renderSavedTimelapsesList();
     }
 
     function switchAddTab(tab) {
@@ -827,6 +1369,7 @@
         usbState.boundId = '';
         usbState.boundOptions = [];
         usbState.loadingBoundOptions = false;
+        usbState.prefillName = '';
     }
     function closeAddPanel() {
         root.querySelector('#cv-add-panel').hidden = true;
@@ -837,37 +1380,49 @@
         switchAddTab('url');
     }
 
-    function openLightbox(camera) {
-        root.querySelector('#cv-lightbox-title').textContent = camera.name;
-        root.querySelector('#cv-lightbox-img').src = camera.stream_url;
-        root.querySelector('#cv-lightbox').hidden = false;
-    }
-    function closeLightbox() {
-        root.querySelector('#cv-lightbox').hidden = true;
-        // Corta la conexión del stream grande al cerrar -- un MJPEG queda
-        // abierto indefinidamente si no se le vacía el src.
-        root.querySelector('#cv-lightbox-img').src = '';
-    }
-
     function moduleHtml() {
         return `
             <section id="camera-viewer-section" class="view-section cv-section" style="display:none">
-                <div class="cv-scroll">
-                    <header class="cv-header">
-                        <div class="cv-header-icon">${icon(ICON_CAMERA, 30)}</div>
-                        <div class="cv-header-copy">
-                            <h1>${tr('pageTitle')}</h1>
-                            <span class="cv-header-sub">NOPAL Labs · v${PLUGIN_VERSION}</span>
-                        </div>
-                        <div class="cv-layout-switch">
-                            <button type="button" class="cv-icon-btn${state.gridLayout === '1x1' ? ' active' : ''}" data-cv-layout="1x1" title="${tr('layout1PerRow')}">${icon(ICON_GRID_1, 15)}</button>
-                            <button type="button" class="cv-icon-btn${state.gridLayout === '2x2' ? ' active' : ''}" data-cv-layout="2x2" title="${tr('layout2PerRow')}">${icon(ICON_GRID_2, 15)}</button>
-                            <button type="button" class="cv-icon-btn${state.gridLayout === '3x3' ? ' active' : ''}" data-cv-layout="3x3" title="${tr('layout3PerRow')}">${icon(ICON_GRID_3, 15)}</button>
-                        </div>
-                        <button type="button" class="cv-btn cv-btn-accent" id="cv-add-btn">${icon(ICON_PLUS, 16)}<span>${tr('addCameraBtn')}</span></button>
-                    </header>
+                <header class="cv-header">
+                    <div class="cv-header-icon">${icon(ICON_CAMERA, 30)}</div>
+                    <div class="cv-header-copy">
+                        <h1>${tr('pageTitle')}</h1>
+                        <span class="cv-header-sub">NOPAL Labs · v${PLUGIN_VERSION}</span>
+                    </div>
+                    <button type="button" class="cv-btn cv-btn-accent" id="cv-add-btn">${icon(ICON_PLUS, 16)}<span>${tr('addCameraBtn')}</span></button>
+                </header>
 
-                    <div class="cv-grid cv-grid-${state.gridLayout}" id="cv-grid"></div>
+                <div class="cv-layout">
+                    <div class="cv-list-panel">
+                        <div class="cv-list-panel-top">
+                            <div class="cv-list-panel-title"><strong>${tr('pageTitle')}</strong><span class="cv-status-pill" id="cv-list-count"></span></div>
+                            <label class="cv-search"><span>${icon(ICON_SEARCH, 14)}</span><input type="search" id="cv-search-input" placeholder="${esc(tr('searchCameraPlaceholder'))}"></label>
+                            <div class="cv-filters-row">
+                                <select id="cv-status-filter">
+                                    <option value="all">${tr('statusAllOption')}</option>
+                                    <option value="online">${tr('statusOnlineOption')}</option>
+                                    <option value="offline">${tr('statusOfflineOption')}</option>
+                                    <option value="disabled">${tr('statusDisabledOption')}</option>
+                                </select>
+                                <select id="cv-source-filter">
+                                    <option value="all">${tr('sourceAllOption')}</option>
+                                    <option value="usb">${tr('sourceUsbOption')}</option>
+                                    <option value="rtsp">${tr('sourceRtspOption')}</option>
+                                    <option value="http">${tr('sourceHttpOption')}</option>
+                                </select>
+                                <button type="button" class="cv-icon-btn" id="cv-refresh-btn" title="${tr('searchAgainTitle')}">${icon(ICON_REFRESH, 14)}</button>
+                            </div>
+                            <div class="cv-mosaic-grid" id="cv-list-rows"></div>
+                        </div>
+                        <div class="cv-list-panel-bottom">
+                            <div class="cv-list-panel-title"><strong>${tr('savedTimelapsesTitle')}</strong></div>
+                            <div class="cv-saved-timelapses" id="cv-saved-timelapses"></div>
+                        </div>
+                    </div>
+                    <div class="cv-inspector-panel" id="cv-inspector-panel">
+                        <nav class="cv-inspector-tabs" id="cv-inspector-tabs"></nav>
+                        <div class="cv-inspector-body" id="cv-inspector-body"></div>
+                    </div>
                 </div>
 
                 <div class="cv-panel-overlay" id="cv-add-panel" hidden>
@@ -906,54 +1461,22 @@
                     </div>
                 </div>
 
-                <div class="cv-panel-overlay" id="cv-edit-panel" hidden>
-                    <div class="cv-panel-backdrop" data-cv-close-edit></div>
-                    <div class="cv-panel-dialog cv-edit-dialog">
-                        <div class="cv-edit-header">
-                            <div class="cv-edit-header-icon">${icon(ICON_CAMERA, 24)}</div>
-                            <div class="cv-edit-header-copy">
-                                <strong>${tr('configureCameraTitle')}</strong>
-                                <span>${tr('configureCameraSubtitle')}</span>
-                            </div>
-                            <button type="button" class="cv-icon-btn cv-edit-close-btn" data-cv-close-edit>${icon(ICON_CLOSE, 16)}</button>
+                <div class="cv-panel-overlay" id="cv-delete-panel" hidden>
+                    <div class="cv-panel-backdrop" data-cv-close-delete></div>
+                    <div class="cv-panel-dialog cv-delete-dialog">
+                        <div class="cv-panel-header"><span><strong id="cv-delete-panel-title"></strong></span><button type="button" data-cv-close-delete>${icon(ICON_CLOSE, 16)}</button></div>
+                        <p id="cv-delete-panel-body" class="cv-field-hint"></p>
+                        <div class="cv-panel-actions cv-delete-actions">
+                            <button type="button" data-cv-close-delete>${tr('cancelBtn')}</button>
+                            <button type="button" class="cv-btn" id="cv-delete-only-btn">${tr('deleteCameraOnlyBtn')}</button>
+                            <button type="button" class="cv-btn cv-btn-danger" id="cv-delete-with-files-btn">${icon(ICON_TRASH, 14)}<span>${tr('deleteCameraWithFilesBtn')}</span></button>
                         </div>
-                        <form class="cv-add-form cv-edit-form-body" id="cv-edit-form">
-                            <div class="cv-field-group">
-                                <span class="cv-field-label">${icon(ICON_TAG, 14)} ${tr('cameraNameUpper')}</span>
-                                <div class="cv-input-icon">
-                                    ${icon(ICON_CAMERA, 16)}
-                                    <input type="text" id="cv-edit-name-input" maxlength="60" required>
-                                </div>
-                                <p class="cv-field-hint">${tr('nameHelpsIdentify')}</p>
-                            </div>
-                            <hr class="cv-edit-divider">
-                            <div id="cv-edit-purpose-section"></div>
-                            <div class="cv-edit-footer">
-                                <button type="button" class="cv-btn cv-btn-danger" id="cv-edit-delete-btn">${icon(ICON_TRASH, 15)}<span>${tr('deleteCameraLabel')}</span></button>
-                                <div class="cv-edit-footer-actions">
-                                    <button type="button" class="cv-btn" data-cv-close-edit>${icon(ICON_CLOSE, 15)}<span>${tr('cancelBtn')}</span></button>
-                                    <button type="submit" class="cv-btn cv-btn-accent" id="cv-edit-submit-btn">${icon(ICON_SAVE, 15)}<span>${tr('saveBtn')}</span></button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="cv-panel-overlay" id="cv-lightbox" hidden>
-                    <div class="cv-panel-backdrop" data-cv-close-lightbox></div>
-                    <div class="cv-lightbox-dialog">
-                        <div class="cv-lightbox-header">
-                            <strong id="cv-lightbox-title"></strong>
-                            <button type="button" data-cv-close-lightbox>${icon(ICON_CLOSE, 18)}</button>
-                        </div>
-                        <img id="cv-lightbox-img" class="cv-lightbox-img" alt="">
                     </div>
                 </div>
             </section>`;
     }
 
     function bindEvents() {
-        root.querySelectorAll('[data-cv-layout]').forEach(btn => btn.addEventListener('click', () => setLayout(btn.dataset.cvLayout)));
         root.querySelector('#cv-add-btn').addEventListener('click', openAddPanel);
         root.querySelectorAll('[data-cv-close-add]').forEach(el => el.addEventListener('click', closeAddPanel));
         root.querySelectorAll('[data-cv-add-tab]').forEach(btn => btn.addEventListener('click', () => switchAddTab(btn.dataset.cvAddTab)));
@@ -982,57 +1505,178 @@
         });
         usbForm.querySelector('#cv-add-usb-submit-btn').addEventListener('click', submitUsbRegistration);
         usbForm.querySelector('#cv-usb-rescan-btn').addEventListener('click', loadUsbDevices);
-        root.querySelectorAll('[data-cv-close-lightbox]').forEach(el => el.addEventListener('click', closeLightbox));
-        root.querySelectorAll('[data-cv-close-edit]').forEach(el => el.addEventListener('click', closeEditPanel));
-        root.querySelector('#cv-edit-form').addEventListener('submit', submitCameraEdit);
-        root.querySelector('#cv-edit-purpose-section').addEventListener('change', event => {
+
+        // ── Lista: búsqueda/filtros/refrescar ──
+        root.querySelector('#cv-search-input').addEventListener('input', event => { state.search = event.target.value; renderCameraList(); });
+        root.querySelector('#cv-status-filter').addEventListener('change', event => { state.statusFilter = event.target.value; renderCameraList(); });
+        root.querySelector('#cv-source-filter').addEventListener('change', event => { state.sourceFilter = event.target.value; renderCameraList(); });
+        root.querySelector('#cv-refresh-btn').addEventListener('click', refreshAll);
+
+        // ── Fila de la lista: seleccionar / acciones rápidas ──
+        root.querySelector('#cv-list-rows').addEventListener('click', async event => {
+            if (event.target.closest('#cv-empty-add-btn')) { openAddPanel(); return; }
+            const rowAction = event.target.closest('[data-cv-row-action]');
+            const row = event.target.closest('[data-cv-camera]');
+            if (!row) return;
+            const camera = state.cameras.find(c => c.id === row.dataset.cvCamera);
+            if (!camera) return;
+            if (!rowAction) { await selectCamera(camera.id); return; }
+            const action = rowAction.dataset.cvRowAction;
+            if (action === 'view' || action === 'edit') { await selectCamera(camera.id); state.inspectorTab = 'general'; renderInspector(); }
+            else if (action === 'duplicate') { await duplicateCamera(camera); }
+            else if (action === 'delete') { await selectCamera(camera.id); await deleteCameraFlow(camera); }
+        });
+
+        // ── Timelapses guardados (mitad inferior del panel izquierdo) ──
+        root.querySelector('#cv-saved-timelapses').addEventListener('click', async event => {
+            const actionBtn = event.target.closest('[data-cv-tl-action]');
+            if (!actionBtn) return;
+            const rowEl = event.target.closest('[data-cv-video]');
+            const camera = selectedCamera();
+            if (!rowEl || !camera) return;
+            const filename = rowEl.dataset.cvVideo;
+            const action = actionBtn.dataset.cvTlAction;
+            if (action === 'view') {
+                state.inspectorTab = 'timelapse';
+                renderInspector();
+            } else if (action === 'delete') {
+                if (!(await confirmDialog(tr('confirmDeleteVideo', { name: filename })))) return;
+                try {
+                    await api(`/api/cameras/${camera.id}/timelapse/videos/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+                    await Promise.all([
+                        loadAssembledVideos(camera.id, { quiet: true }),
+                        loadTimelapseStats(camera.id, { quiet: true }),
+                    ]);
+                    renderSavedTimelapsesList();
+                } catch (error) {
+                    toast(error.message, 'error');
+                }
+            }
+        });
+
+        // ── Inspector: volver a la lista (drawer móvil) ──
+        root.querySelector('#cv-inspector-tabs').addEventListener('click', async event => {
+            if (event.target.closest('#cv-inspector-back-btn')) {
+                if (state.configDirty && !(await confirmDialog(tr('unsavedChangesConfirm')))) return;
+                state.configDirty = false;
+                state.selectedCameraId = null;
+                render();
+                return;
+            }
+            const tabBtn = event.target.closest('[data-cv-inspector-tab]');
+            if (!tabBtn) return;
+            const nextTab = tabBtn.dataset.cvInspectorTab;
+            if (state.inspectorTab === 'general' && nextTab !== 'general' && state.configDirty) {
+                if (!(await confirmDialog(tr('unsavedChangesConfirm')))) return;
+                state.configDirty = false;
+            }
+            state.inspectorTab = nextTab;
+            renderInspector();
+        });
+
+        // ── Inspector: tab Información (cámara activa) ──
+        root.querySelector('#cv-inspector-body').addEventListener('change', event => {
+            if (event.target.id === 'cv-active-toggle-input') {
+                const camera = selectedCamera();
+                if (camera) toggleCameraEnabled(camera, event.target.checked);
+                return;
+            }
             if (event.target.name === 'cv-edit-purpose') {
                 editState.purpose = event.target.value;
+                state.configDirty = true;
                 renderEditPanel();
+                return;
+            }
+            if (event.target.id === 'cv-edit-timelapse-enabled-input') {
+                editState.timelapseEnabled = event.target.checked;
+                state.configDirty = true;
                 return;
             }
             if (event.target.id === 'cv-edit-bound-select') {
                 const [type, id] = (event.target.value || '').split('::');
                 editState.boundType = type || '';
                 editState.boundId = id || '';
+                state.configDirty = true;
                 return;
             }
             if (event.target.id === 'cv-edit-interval-input') {
                 editState.intervalS = Number(event.target.value) || editState.intervalS;
+                state.configDirty = true;
                 return;
             }
             if (event.target.id === 'cv-edit-fps-input') {
                 editState.fps = Number(event.target.value) || editState.fps;
+                state.configDirty = true;
+                return;
+            }
+            if (event.target.id === 'cv-edit-name-input' || event.target.id === 'cv-edit-note-input') {
+                state.configDirty = true;
             }
         });
-        root.querySelector('#cv-edit-purpose-section').addEventListener('click', event => {
+        root.querySelector('#cv-inspector-body').addEventListener('input', event => {
+            if (event.target.id === 'cv-edit-name-input') state.configDirty = true;
+        });
+
+        // ── Inspector: tab Configuración (pasos de intervalo/fps, probar
+        // conexión, guardar/cancelar) ──
+        root.querySelector('#cv-inspector-body').addEventListener('click', async event => {
             const stepBtn = event.target.closest('[data-cv-step]');
-            if (!stepBtn) return;
-            const dir = Number(stepBtn.dataset.cvStepDir);
-            const field = stepBtn.dataset.cvStep === 'interval' ? 'intervalS' : 'fps';
-            const inputId = stepBtn.dataset.cvStep === 'interval' ? 'cv-edit-interval-input' : 'cv-edit-fps-input';
-            editState[field] = Math.max(1, (editState[field] || 0) + dir);
-            const input = root.querySelector(`#${inputId}`);
-            if (input) input.value = editState[field];
+            if (stepBtn) {
+                const dir = Number(stepBtn.dataset.cvStepDir);
+                const field = stepBtn.dataset.cvStep === 'interval' ? 'intervalS' : 'fps';
+                const inputId = stepBtn.dataset.cvStep === 'interval' ? 'cv-edit-interval-input' : 'cv-edit-fps-input';
+                editState[field] = Math.max(1, (editState[field] || 0) + dir);
+                state.configDirty = true;
+                const input = root.querySelector(`#${inputId}`);
+                if (input) input.value = editState[field];
+                return;
+            }
+            if (event.target.closest('#cv-config-test-btn')) {
+                const camera = selectedCamera();
+                if (camera) await testConnection(camera);
+                return;
+            }
+            if (event.target.closest('#cv-config-cancel-btn')) {
+                state.configDirty = false;
+                renderInspector();
+                return;
+            }
+            if (event.target.closest('#cv-goto-general-btn')) {
+                state.inspectorTab = 'general';
+                renderInspector();
+                return;
+            }
+            const pauseBtn = event.target.closest('#cv-timelapse-pause-btn');
+            if (pauseBtn) {
+                const camera = selectedCamera();
+                if (!camera) return;
+                const endpoint = pauseBtn.dataset.cvPaused === 'true' ? 'resume' : 'pause';
+                pauseBtn.disabled = true;
+                try {
+                    await api(`/api/cameras/${camera.id}/timelapse/${endpoint}`, { method: 'POST' });
+                    await loadTimelapseStats(camera.id, { quiet: true });
+                    const statusMount = root.querySelector('#cv-timelapse-status-mount');
+                    if (statusMount) statusMount.innerHTML = timelapseStatusBarHtml(camera);
+                } catch (error) {
+                    toast(error.message, 'error');
+                    pauseBtn.disabled = false;
+                }
+                return;
+            }
         });
-        root.querySelector('#cv-grid').addEventListener('click', event => {
-            // La tarjeta completa (ver camera-card.js) maneja sus propios
-            // clics -- botones, toggles, el slider de enfoque -- así que un
-            // clic ahí adentro nunca debe además abrir el lightbox de acá.
-            if (event.target.closest('.cam-card')) return;
-            const card = event.target.closest('.cv-card');
-            if (!card) return;
-            const camera = state.cameras.find(item => item.id === card.dataset.cvCamera);
-            if (camera) openLightbox(camera);
+        root.querySelector('#cv-inspector-body').addEventListener('submit', event => {
+            if (event.target.id === 'cv-edit-form') submitCameraEdit(event);
         });
-        root.querySelector('#cv-edit-delete-btn').addEventListener('click', async () => {
-            const camera = state.cameras.find(item => item.id === editState.cameraId);
-            if (!camera) return;
-            await removeCamera(camera);
-            // removeCamera ya confirma con el usuario -- si canceló, la
-            // cámara sigue en state.cameras y closeEditPanel() de más no
-            // hace daño; si la borró, el popup ya no tiene nada que mostrar.
-            closeEditPanel();
+
+        // ── Eliminar (con o sin archivos) ──
+        root.querySelectorAll('[data-cv-close-delete]').forEach(el => el.addEventListener('click', () => { root.querySelector('#cv-delete-panel').hidden = true; }));
+        root.querySelector('#cv-delete-only-btn').addEventListener('click', () => {
+            const id = root.querySelector('#cv-delete-panel').dataset.cvDeleteCamera;
+            if (id) performDelete(id, false);
+        });
+        root.querySelector('#cv-delete-with-files-btn').addEventListener('click', () => {
+            const id = root.querySelector('#cv-delete-panel').dataset.cvDeleteCamera;
+            if (id) performDelete(id, true);
         });
     }
 
@@ -1057,12 +1701,16 @@
 
         bindEvents();
         refreshAll();
+        ensureHealthPolling();
         window.applySidebarOrder?.();
     }
 
     function unmount() {
         document.querySelector(`[data-plugin-nav="${PLUGIN_ID}"]`)?.remove();
         document.getElementById('camera-viewer-section')?.remove();
+        if (healthPollTimer) { clearInterval(healthPollTimer); healthPollTimer = null; }
+        stopCardInstance();
+        stopTimelapseEmbed();
         root = null;
     }
 

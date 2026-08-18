@@ -11,6 +11,7 @@ grabación) se hizo aparte, a mano, contra un ffmpeg real.
 
 import asyncio
 import io
+import os
 import time
 
 import pytest
@@ -179,6 +180,15 @@ class TestTimelapseStats:
         stats = timelapse_service.get_timelapse_stats(cam["id"])
         assert stats["frame_count"] == 0
         assert stats["estimated_output_bytes"] == 0
+
+    def test_assembled_count_reflects_saved_videos(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(timelapse_service.camera_service, "CAPTURES_DIR", str(tmp_path))
+        cam = _register_camera()
+        assert timelapse_service.get_timelapse_stats(cam["id"])["assembled_count"] == 0
+        assembled_dir = timelapse_service._assembled_dir(cam["id"])
+        open(os.path.join(assembled_dir, "timelapse_1.mp4"), "wb").write(b"x")
+        open(os.path.join(assembled_dir, "timelapse_2.gif"), "wb").write(b"x")
+        assert timelapse_service.get_timelapse_stats(cam["id"])["assembled_count"] == 2
 
 
 class TestListCapturesAndFilePath:
@@ -369,6 +379,39 @@ class TestAssembleTimelapseVideo:
         assert "-r" in captured_args[0]
         assert captured_args[0][captured_args[0].index("-r") + 1] == "10"
 
+    async def test_concat_list_uses_absolute_frame_paths(self, monkeypatch):
+        # Regresión: el demuxer `-f concat` de ffmpeg resuelve rutas
+        # relativas dentro del .txt contra el directorio que CONTIENE al
+        # propio .txt (camera_dir), no contra el cwd del proceso. Con rutas
+        # relativas a CAPTURES_DIR (ej. "camera_captures/<id>/frames/x.jpg")
+        # ffmpeg le volvía a anteponer camera_dir y buscaba
+        # ".../camera_captures/<id>/camera_captures/<id>/frames/x.jpg".
+        # Las entradas del concat list deben ser absolutas para no depender
+        # de esa semántica.
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        for name in ("1000.jpg", "2000.jpg"):
+            with open(f"{frames_dir}/{name}", "wb") as handle:
+                handle.write(FRAME_BLACK)
+
+        captured_concat_contents = []
+
+        async def fake_create_subprocess_exec(*args, **kwargs):
+            concat_list_path = args[args.index("-i") + 1]
+            with open(concat_list_path, encoding="utf-8") as handle:
+                captured_concat_contents.append(handle.read())
+            return _FakeCaptureProcess(returncode=0)
+
+        monkeypatch.setattr(timelapse_service.asyncio, "create_subprocess_exec", fake_create_subprocess_exec)
+        monkeypatch.setattr(timelapse_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+
+        await timelapse_service.assemble_timelapse_video(cam["id"])
+        content = captured_concat_contents[0]
+        for name in ("1000.jpg", "2000.jpg"):
+            expected = os.path.abspath(os.path.join(frames_dir, name))
+            assert f"file '{expected}'" in content
+        assert "camera_captures" + os.sep + cam["id"] + os.sep + "camera_captures" not in content
+
     async def test_nonzero_returncode_raises_with_stderr(self, monkeypatch):
         cam = _register_camera()
         frames_dir = timelapse_service._frames_dir(cam["id"])
@@ -438,3 +481,205 @@ class TestGrabacionesYBorrado:
             assert timelapse_service.delete_recording("cam1", maligno) is False, maligno
             assert timelapse_service.delete_capture("cam1", maligno) is False, maligno
         assert victima.exists(), "se borró un archivo fuera de la carpeta de la cámara"
+
+
+class TestAssembleWithSelection:
+    """assemble_timelapse_video/gif con `filenames` -- flujo "Juntar": una
+    selección manual de capturas, en el orden que el usuario haya elegido,
+    en vez de todas las capturas en orden cronológico."""
+
+    async def test_uses_only_selected_files_in_given_order(self, monkeypatch):
+        cam = _register_camera()
+        camera_service.update_timelapse_config(cam["id"], fps=10)
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        for name in ("1000.jpg", "2000.jpg", "3000.jpg"):
+            with open(f"{frames_dir}/{name}", "wb") as handle:
+                handle.write(FRAME_BLACK)
+
+        captured_concat_contents = []
+
+        async def fake_create_subprocess_exec(*args, **kwargs):
+            concat_list_path = args[args.index("-i") + 1]
+            with open(concat_list_path, encoding="utf-8") as handle:
+                captured_concat_contents.append(handle.read())
+            return _FakeCaptureProcess(returncode=0)
+
+        monkeypatch.setattr(timelapse_service.asyncio, "create_subprocess_exec", fake_create_subprocess_exec)
+        monkeypatch.setattr(timelapse_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+
+        # Orden invertido respecto al cronológico, y deja afuera 2000.jpg --
+        # el resultado debe respetar EXACTAMENTE esta selección y ese orden.
+        await timelapse_service.assemble_timelapse_video(cam["id"], filenames=["3000.jpg", "1000.jpg"])
+        content = captured_concat_contents[0]
+        pos_3000 = content.index("3000.jpg")
+        pos_1000 = content.index("1000.jpg")
+        assert pos_3000 < pos_1000, "no respetó el orden de la selección"
+        assert "2000.jpg" not in content, "incluyó una captura fuera de la selección"
+
+    async def test_ignores_filenames_that_dont_exist(self, monkeypatch):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        for name in ("1000.jpg", "2000.jpg"):
+            with open(f"{frames_dir}/{name}", "wb") as handle:
+                handle.write(FRAME_BLACK)
+        monkeypatch.setattr(timelapse_service.asyncio, "create_subprocess_exec", _fake_create_subprocess_exec)
+        monkeypatch.setattr(timelapse_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+
+        # No debe reventar por el nombre inexistente ni por el path
+        # traversal -- simplemente se ignoran, como filas inválidas.
+        output_path = await timelapse_service.assemble_timelapse_video(
+            cam["id"], filenames=["1000.jpg", "no-existe.jpg", "../fuera.jpg", "2000.jpg"]
+        )
+        assert output_path.endswith(".mp4")
+
+    async def test_raises_if_selection_has_fewer_than_two_valid_frames(self, monkeypatch):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        with open(f"{frames_dir}/1000.jpg", "wb") as handle:
+            handle.write(FRAME_BLACK)
+        monkeypatch.setattr(timelapse_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+        with pytest.raises(RuntimeError, match="suficientes"):
+            await timelapse_service.assemble_timelapse_video(cam["id"], filenames=["1000.jpg"])
+
+    async def test_assemble_gif_reuses_same_concat_mechanism(self, monkeypatch):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        for name in ("1000.jpg", "2000.jpg"):
+            with open(f"{frames_dir}/{name}", "wb") as handle:
+                handle.write(FRAME_BLACK)
+
+        captured_args = []
+
+        async def fake_create_subprocess_exec(*args, **kwargs):
+            captured_args.append(args)
+            return _FakeCaptureProcess(returncode=0)
+
+        monkeypatch.setattr(timelapse_service.asyncio, "create_subprocess_exec", fake_create_subprocess_exec)
+        monkeypatch.setattr(timelapse_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+
+        output_path = await timelapse_service.assemble_timelapse_gif(cam["id"])
+        assert output_path.endswith(".gif")
+        assert "palettegen" in " ".join(captured_args[0])
+
+
+class TestAssembledVideoListing:
+    """Antes de esto, el .mp4/.gif armado quedaba huérfano en disco -- sin
+    list/get/delete, solo un toast con el nombre como rastro."""
+
+    async def test_assembled_video_lands_in_its_own_dir_and_is_listed(self, monkeypatch):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        for name in ("1000.jpg", "2000.jpg"):
+            with open(f"{frames_dir}/{name}", "wb") as handle:
+                handle.write(FRAME_BLACK)
+
+        # El mock estándar (_fake_create_subprocess_exec) no escribe el
+        # archivo de salida (ffmpeg real sí) -- para probar el listado hace
+        # falta que el fake efectivamente cree el .mp4 en el output_path
+        # pedido, igual que haría el binario real.
+        async def fake_create_subprocess_exec(*args, **kwargs):
+            output_path = args[-1]
+            open(output_path, "wb").write(b"fake-mp4")
+            return _FakeCaptureProcess(returncode=0)
+
+        monkeypatch.setattr(timelapse_service.asyncio, "create_subprocess_exec", fake_create_subprocess_exec)
+        monkeypatch.setattr(timelapse_service.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+
+        output_path = await timelapse_service.assemble_timelapse_video(cam["id"])
+        assert output_path.startswith(timelapse_service._assembled_dir(cam["id"]))
+
+        videos = timelapse_service.list_assembled_videos(cam["id"])
+        assert len(videos) == 1
+        assert videos[0]["filename"] == os.path.basename(output_path)
+        assert videos[0]["kind"] == "video"
+
+    def test_get_and_delete_assembled_video(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(timelapse_service.camera_service, "CAPTURES_DIR", str(tmp_path))
+        ruta = os.path.join(timelapse_service._assembled_dir("cam1"), "timelapse_1.mp4")
+        open(ruta, "wb").write(b"x")
+        assert timelapse_service.get_assembled_video_file_path("cam1", "timelapse_1.mp4") == ruta
+        assert timelapse_service.delete_assembled_video("cam1", "timelapse_1.mp4") is True
+        assert not os.path.exists(ruta)
+        assert timelapse_service.delete_assembled_video("cam1", "timelapse_1.mp4") is False
+
+    def test_cannot_escape_camera_folder(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(timelapse_service.camera_service, "CAPTURES_DIR", str(tmp_path))
+        timelapse_service._assembled_dir("cam1")
+        for maligno in ["../no-tocar.json", "..", ".", "a/b.mp4"]:
+            assert timelapse_service.delete_assembled_video("cam1", maligno) is False, maligno
+            assert timelapse_service.get_assembled_video_file_path("cam1", maligno) is None, maligno
+
+
+class TestEditCapture:
+    """Rotar/recortar una captura -- lo único de "Editar" que se puede
+    construir de verdad sin fabricar nada (Pillow ya está en uso en este
+    mismo archivo para motion detection)."""
+
+    def test_rotate_overwrites_by_default(self):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        path = os.path.join(frames_dir, "1000.jpg")
+        with open(path, "wb") as handle:
+            handle.write(_jpeg_bytes((10, 20, 30)))
+        Image.open(path).load()  # sanity: es un jpeg válido antes de editar
+
+        result = timelapse_service.edit_capture(cam["id"], "1000.jpg", rotate=90)
+        assert result == "1000.jpg"
+        edited = Image.open(path)
+        # Un frame de 64x64 rotado 90 sigue siendo cuadrado -- se valida que
+        # al menos abre sin error y no truncó el archivo.
+        assert edited.size == (64, 64)
+
+    def test_save_as_copy_keeps_original(self):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        path = os.path.join(frames_dir, "1000.jpg")
+        with open(path, "wb") as handle:
+            handle.write(FRAME_BLACK)
+
+        result = timelapse_service.edit_capture(cam["id"], "1000.jpg", rotate=180, save_as_copy=True)
+        assert result != "1000.jpg"
+        assert os.path.exists(path), "no debía tocar el original"
+        assert os.path.exists(os.path.join(frames_dir, result))
+
+    def test_crop_reduces_dimensions(self):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        path = os.path.join(frames_dir, "1000.jpg")
+        with open(path, "wb") as handle:
+            handle.write(FRAME_BLACK)
+
+        timelapse_service.edit_capture(cam["id"], "1000.jpg", crop={"left": 0, "top": 0, "right": 32, "bottom": 32})
+        assert Image.open(path).size == (32, 32)
+
+    def test_invalid_rotation_raises(self):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        with open(os.path.join(frames_dir, "1000.jpg"), "wb") as handle:
+            handle.write(FRAME_BLACK)
+        with pytest.raises(ValueError):
+            timelapse_service.edit_capture(cam["id"], "1000.jpg", rotate=45)
+
+    def test_missing_capture_returns_none(self):
+        cam = _register_camera()
+        assert timelapse_service.edit_capture(cam["id"], "no-existe.jpg", rotate=90) is None
+
+    def test_cannot_escape_camera_folder(self):
+        cam = _register_camera()
+        assert timelapse_service.edit_capture(cam["id"], "../no-tocar.json", rotate=90) is None
+
+
+class TestCapturesZip:
+    def test_zip_contains_only_valid_selected_files(self):
+        cam = _register_camera()
+        frames_dir = timelapse_service._frames_dir(cam["id"])
+        for name in ("1000.jpg", "2000.jpg"):
+            with open(f"{frames_dir}/{name}", "wb") as handle:
+                handle.write(FRAME_BLACK)
+
+        zip_bytes = timelapse_service.build_captures_zip(
+            cam["id"], ["1000.jpg", "no-existe.jpg", "../fuera.jpg"]
+        )
+        import zipfile
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
+            assert archive.namelist() == ["1000.jpg"]

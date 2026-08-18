@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import backend.api.cameras as cameras_api
 import backend.services.camera_service as camera_service
@@ -170,6 +171,112 @@ class TestCameraUpdate:
         })
         assert response.status_code == 200
         assert response.json()["purpose_note"] == "Vigilar la puerta"
+
+
+class TestCameraEnabled:
+    """"Cámara activa" -- distinto del enabled del timelapse (ver
+    camera_service.update_camera). Debe persistir de verdad, no solo en la
+    respuesta del request."""
+
+    def test_new_camera_starts_enabled(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Cama", "stream_url": "http://192.168.1.50:8080/stream"}).json()
+        assert created.get("enabled", True) is True
+
+    def test_disabling_persists_across_requests(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Cama", "stream_url": "http://192.168.1.50:8080/stream"}).json()
+        response = client.post(f"/api/cameras/{created['id']}/update", data={"name": "Cama", "enabled": "false"})
+        assert response.status_code == 200
+        assert response.json()["enabled"] is False
+        listed = client.get("/api/cameras").json()["cameras"]
+        assert next(c for c in listed if c["id"] == created["id"])["enabled"] is False
+
+    def test_update_without_enabled_field_does_not_touch_it(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Cama", "stream_url": "http://192.168.1.50:8080/stream"}).json()
+        client.post(f"/api/cameras/{created['id']}/update", data={"name": "Cama", "enabled": "false"})
+        # Un guardado normal del formulario (sin tocar el switch) no debe
+        # reactivarla de rebote.
+        response = client.post(f"/api/cameras/{created['id']}/update", data={"name": "Cama renombrada"})
+        assert response.json()["enabled"] is False
+
+
+class TestCameraHealth:
+    def test_unknown_camera_returns_404(self, client, as_admin):
+        response = client.get("/api/cameras/does-not-exist/health")
+        assert response.status_code == 404
+
+    def test_disabled_camera_is_not_probed(self, client, as_admin, monkeypatch):
+        created = client.post("/api/cameras", data={"name": "Cama", "stream_url": "http://192.168.1.50:8080/stream"}).json()
+        client.post(f"/api/cameras/{created['id']}/update", data={"name": "Cama", "enabled": "false"})
+
+        def fail_if_called(*args, **kwargs):
+            raise AssertionError("no debería probar una cámara deshabilitada")
+        monkeypatch.setattr(camera_service, "_probe_http_source", fail_if_called)
+
+        response = client.get(f"/api/cameras/{created['id']}/health")
+        assert response.status_code == 200
+        assert response.json() == {"online": False, "disabled": True}
+
+    def test_enabled_camera_reuses_the_real_probe(self, client, as_admin, monkeypatch):
+        created = client.post("/api/cameras", data={"name": "Cama", "stream_url": "http://192.168.1.50:8080/stream"}).json()
+        monkeypatch.setattr(camera_service, "_probe_http_source", lambda url: True)
+        response = client.get(f"/api/cameras/{created['id']}/health")
+        assert response.status_code == 200
+        assert response.json() == {"online": True, "disabled": False}
+
+
+class TestCameraDuplicate:
+    def test_duplicate_requires_admin(self, client, as_operator):
+        response = client.post("/api/cameras/whatever/duplicate", data={"name": "Copia"})
+        assert response.status_code == 403
+
+    def test_duplicate_unknown_returns_404(self, client, as_admin):
+        response = client.post("/api/cameras/does-not-exist/duplicate", data={"name": "Copia"})
+        assert response.status_code == 404
+
+    def test_duplicate_url_camera_copies_source(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Original", "stream_url": "http://192.168.1.50:8080/stream"}).json()
+        response = client.post(f"/api/cameras/{created['id']}/duplicate", data={"name": "Copia"})
+        assert response.status_code == 200
+        copy = response.json()
+        assert copy["id"] != created["id"]
+        assert copy["name"] == "Copia"
+        assert copy["source_url"] == created["source_url"]
+        assert copy["enabled"] is True
+
+    def test_duplicate_usb_camera_never_copies_device_path(self, client, as_admin, tmp_path):
+        fake_device = tmp_path / "video0"
+        fake_device.write_bytes(b"")
+        created = client.post("/api/cameras/usb/register", data={"name": "Webcam", "device_path": str(fake_device)}).json()
+        assert created["device_path"] == str(fake_device)
+        response = client.post(f"/api/cameras/{created['id']}/duplicate", data={"name": "Webcam (copia)"})
+        assert response.status_code == 200
+        copy = response.json()
+        # Mismo /dev/videoN a ciegas es justo el choque de recurso que no se
+        # quiere -- la copia nace sin dispositivo asignado.
+        assert copy["device_path"] is None
+
+
+class TestCameraRemoveWithFiles:
+    def test_remove_without_flag_keeps_files(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Temp", "stream_url": "http://192.168.1.70:8080/stream"}).json()
+        camera_dir = os.path.join(camera_service.CAPTURES_DIR, created["id"], "frames")
+        os.makedirs(camera_dir, exist_ok=True)
+        marker = os.path.join(camera_dir, "keep.jpg")
+        open(marker, "wb").write(b"x")
+
+        response = client.post("/api/cameras/remove", data={"id": created["id"]})
+        assert response.status_code == 200
+        assert os.path.exists(marker), "no debía borrar archivos sin pedirlo explícitamente"
+
+    def test_remove_with_flag_deletes_files(self, client, as_admin):
+        created = client.post("/api/cameras", data={"name": "Temp", "stream_url": "http://192.168.1.70:8080/stream"}).json()
+        camera_root = os.path.join(camera_service.CAPTURES_DIR, created["id"])
+        os.makedirs(os.path.join(camera_root, "frames"), exist_ok=True)
+        open(os.path.join(camera_root, "frames", "gone.jpg"), "wb").write(b"x")
+
+        response = client.post("/api/cameras/remove", data={"id": created["id"], "delete_files": "true"})
+        assert response.status_code == 200
+        assert not os.path.exists(camera_root)
 
 
 class TestUsbDiscover:

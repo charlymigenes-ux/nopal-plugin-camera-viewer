@@ -16,6 +16,7 @@ accessory_service.py (accessory_registry.json).
 import json
 import logging
 import os
+import shutil
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -117,6 +118,7 @@ def register_camera(
     bound_device: Optional[Dict[str, str]] = None,
     device_path: Optional[str] = None,
     entry_id: Optional[str] = None,
+    enabled: bool = True,
 ) -> Dict[str, Any]:
     """`purpose`/`bound_device` (para qué se va a usar la cámara -- ver
     usb_camera_service.py) y `device_path` (nodo /dev/videoN real, solo para
@@ -126,7 +128,12 @@ def register_camera(
     tratan como ausentes, no como un error. `entry_id` es opcional: el alta
     de cámara USB necesita conocer el id ANTES de guardar (para poder armar
     `source_url=/api/cameras/usb/{id}/stream`), así que lo genera y lo pasa
-    -- si no se da, se genera acá como siempre."""
+    -- si no se da, se genera acá como siempre.
+
+    `enabled` es un flag de "cámara activa" a nivel de la cámara entera --
+    distinto de timelapse_config.enabled, que solo prende/apaga el bucle
+    periódico de capturas. Una cámara con enabled=False no se prueba (ver
+    get_camera_health) ni debería iniciar timelapse/grabación."""
     entries = _load_registry()
     entry_id = entry_id or uuid.uuid4().hex[:12]
     if _is_rtsp(source_url):
@@ -141,6 +148,7 @@ def register_camera(
         "bound_device": bound_device,
         "device_path": device_path,
         "timelapse_config": None,
+        "enabled": enabled,
     }
     entries.append(entry)
     _save_registry(entries)
@@ -196,6 +204,7 @@ def update_camera(
     purpose: Optional[str] = None,
     purpose_note: Optional[str] = None,
     bound_device: Optional[Dict[str, str]] = None,
+    enabled: Optional[bool] = None,
 ) -> Optional[Dict[str, Any]]:
     """Edita nombre/propósito de una cámara ya registrada -- nunca la fuente
     (`source_url`/`device_path`): cambiar de dónde sale el video es dar de
@@ -203,7 +212,12 @@ def update_camera(
     no se tocan acá. `purpose=None` dado explícitamente (vs. simplemente no
     mandado) se usa para pasar de timelapse/other de vuelta a monitoreo
     general, así que se aplica siempre que el llamador lo pase -- ver
-    router.py, que manda los tres campos de propósito juntos."""
+    router.py, que manda los tres campos de propósito juntos.
+
+    `enabled=None` (default) significa "no tocar" -- a diferencia de
+    purpose, que siempre se reescribe, este solo se aplica si el llamador
+    manda explícitamente True/False (ver el endpoint de "Cámara activa",
+    que es una acción separada de guardar el resto del formulario)."""
     entries = _load_registry()
     entry = next((e for e in entries if e.get("id") == camera_id), None)
     if entry is None:
@@ -213,6 +227,8 @@ def update_camera(
     entry["purpose"] = purpose
     entry["purpose_note"] = purpose_note if purpose == "other" else None
     entry["bound_device"] = bound_device if purpose == "timelapse" else None
+    if enabled is not None:
+        entry["enabled"] = enabled
     _save_registry(entries)
     return entry
 
@@ -242,6 +258,30 @@ def _probe_http_source(url: str) -> bool:
         return False
 
 
+def get_camera_health(camera_id: str) -> Optional[Dict[str, Any]]:
+    """Mismo chequeo real que get_camera_health_counts() pero para UNA sola
+    cámara (botón "Probar conexión" / estado por fila del inspector) --
+    reusa exactamente la misma lógica de prueba, no una nueva. None si la
+    cámara no existe. Una cámara con enabled=False no se prueba -- "apagada"
+    y "desconectada" son cosas distintas, y probar una fuente apagada a
+    propósito no tiene sentido."""
+    entries = _load_registry()
+    entry = next((e for e in entries if e.get("id") == camera_id), None)
+    if entry is None:
+        return None
+    if entry.get("enabled", True) is False:
+        return {"online": False, "disabled": True}
+    device_path = entry.get("device_path")
+    source_url = entry.get("source_url", "")
+    if device_path:
+        online = os.path.exists(device_path)
+    elif _is_rtsp(source_url):
+        online = _go2rtc_stream_has_producer(camera_id)
+    else:
+        online = _probe_http_source(source_url)
+    return {"online": online, "disabled": False}
+
+
 def get_camera_health_counts() -> Dict[str, int]:
     """Conteo real para el resumen del dashboard -- nunca "online" sin
     comprobarlo. Tres caminos según el tipo de fuente: cámara USB servida
@@ -263,7 +303,13 @@ def get_camera_health_counts() -> Dict[str, int]:
     return {"online": online, "total": len(entries)}
 
 
-async def unregister_camera(camera_id: str) -> bool:
+async def unregister_camera(camera_id: str, delete_files: bool = False) -> bool:
+    """`delete_files=False` (default) -- comportamiento de siempre: solo se
+    borra el registro, las capturas/grabaciones/timelapses de
+    camera_captures/<id>/ quedan en disco. Con `delete_files=True` se borran
+    también -- son dos acciones DISTINTAS a propósito (ver el diálogo de
+    confirmación del inspector: "Eliminar cámara" vs. "Eliminar cámara y sus
+    archivos"), nunca fusionadas en un único comportamiento silencioso."""
     entries = _load_registry()
     removed = next((e for e in entries if e.get("id") == camera_id), None)
     filtered = [e for e in entries if e.get("id") != camera_id]
@@ -276,4 +322,29 @@ async def unregister_camera(camera_id: str) -> bool:
             # Cámara USB -- si había un proceso ffmpeg corriendo para ella,
             # se lo detiene acá; si no había nadie mirándola, es un no-op.
             await usb_camera_service.stop_stream(camera_id)
+        if delete_files:
+            shutil.rmtree(os.path.join(CAPTURES_DIR, camera_id), ignore_errors=True)
     return changed
+
+
+def duplicate_camera(camera_id: str, new_name: str) -> Optional[Dict[str, Any]]:
+    """Copia una cámara ya registrada con un nombre nuevo. Nunca copia
+    `device_path`: una USB duplicada con el mismo nodo /dev/videoN a
+    ciegas es exactamente el choque de recurso que se quiere evitar -- la
+    copia nace sin dispositivo asignado y el frontend obliga a elegir uno
+    (mismo flujo de descubrimiento del alta) antes de poder guardarla.
+    Para RTSP/HTTP/ONVIF, `source_url` sí se copia -- ahí no hay recurso
+    exclusivo que choque."""
+    entries = _load_registry()
+    original = next((e for e in entries if e.get("id") == camera_id), None)
+    if original is None:
+        return None
+    return register_camera(
+        name=new_name,
+        source_url=original.get("source_url", ""),
+        purpose=original.get("purpose"),
+        purpose_note=original.get("purpose_note"),
+        bound_device=original.get("bound_device"),
+        device_path=None,
+        enabled=True,
+    )

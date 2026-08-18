@@ -17,6 +17,7 @@ import logging
 import os
 import shutil
 import time
+import zipfile
 from typing import Any, Dict, List, Optional
 
 from PIL import Image
@@ -53,6 +54,15 @@ def _frames_dir(camera_id: str) -> str:
 
 def _recordings_dir(camera_id: str) -> str:
     path = os.path.join(camera_service.CAPTURES_DIR, camera_id, "recordings")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _assembled_dir(camera_id: str) -> str:
+    """Carpeta propia para los .mp4/.gif armados a partir de capturas -- antes
+    vivían sueltos en camera_dir (la raíz de la cámara), mezclados con
+    _concat_list.txt y sin ningún list/get/delete que los expusiera."""
+    path = os.path.join(camera_service.CAPTURES_DIR, camera_id, "timelapse")
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -368,6 +378,9 @@ def get_timelapse_stats(camera_id: str) -> Dict[str, Any]:
         "estimated_output_bytes": round(avg_frame_bytes * frame_count),
         "storage_used_bytes": _dir_size_bytes(camera_dir),
         "storage_total_bytes": usage.total,
+        # Cuántos .mp4/.gif ya armados hay -- el inspector lo usa como
+        # estadística "Timelapses" (distinta de "Capturas"/frame_count).
+        "assembled_count": len(list_assembled_videos(camera_id)),
     }
 
 
@@ -394,37 +407,62 @@ def get_capture_file_path(camera_id: str, filename: str) -> Optional[str]:
     return path if os.path.isfile(path) else None
 
 
-async def assemble_timelapse_video(camera_id: str) -> str:
-    """Arma el video final a partir de los fotogramas capturados, al FPS
-    configurado. Usa el demuxer `concat` (lista explícita de archivos) en
-    vez de `-pattern_type glob`: glob depende de que el binario de ffmpeg
-    se haya compilado con soporte de glob, no todos los paquetes lo traen,
-    mientras que concat siempre funciona."""
-    _require_ffmpeg()
-    frames_dir = _frames_dir(camera_id)
-    frame_files = sorted(f for f in os.listdir(frames_dir) if f.endswith(".jpg"))
-    if len(frame_files) < 2:
-        raise RuntimeError("No hay suficientes fotogramas capturados todavía")
+def _selected_frame_files(camera_id: str, frames_dir: str, filenames: Optional[List[str]]) -> List[str]:
+    """Fotogramas a usar para armar un video/gif: todos los capturados en
+    orden cronológico (comportamiento de "Armar timelapse" de siempre) si no
+    se pasa `filenames`, o exactamente los que se pasen, EN ESE ORDEN
+    (comportamiento de "Juntar": selección manual + orden elegido por el
+    usuario) -- mismo mecanismo de concat list para ambos flujos, sin
+    duplicar la lógica de ffmpeg."""
+    if filenames:
+        return [f for f in filenames if get_capture_file_path(camera_id, f) is not None]
+    return sorted(f for f in os.listdir(frames_dir) if f.endswith(".jpg"))
 
-    config = camera_service.get_timelapse_config(camera_id) or {}
-    fps = config.get("fps") or camera_service.DEFAULT_TIMELAPSE_CONFIG["fps"]
 
-    camera_dir = os.path.join(camera_service.CAPTURES_DIR, camera_id)
-    os.makedirs(camera_dir, exist_ok=True)
-    output_path = os.path.join(camera_dir, f"timelapse_{int(time.time())}.mp4")
-    concat_list_path = os.path.join(camera_dir, "_concat_list.txt")
-
-    frame_duration = 1.0 / fps
+def _write_concat_list(concat_list_path: str, frames_dir: str, frame_files: List[str], frame_duration: float) -> None:
+    # Rutas ABSOLUTAS en el concat list -- el demuxer `-f concat` de ffmpeg
+    # resuelve cualquier ruta relativa que aparezca dentro del .txt contra
+    # el directorio que contiene al propio .txt, no contra el cwd del
+    # proceso ni contra CAPTURES_DIR -- con ruta absoluta, ffmpeg la usa tal
+    # cual y no hay forma de que la duplique (bug ya visto y arreglado).
     with open(concat_list_path, "w", encoding="utf-8") as handle:
         for filename in frame_files:
-            frame_path = os.path.join(frames_dir, filename).replace("'", "'\\''")
+            frame_path = os.path.abspath(os.path.join(frames_dir, filename)).replace("'", "'\\''")
             handle.write(f"file '{frame_path}'\n")
             handle.write(f"duration {frame_duration}\n")
         # El demuxer concat ignora la duración del último item salvo que se
         # repita la entrada -- sin esto el último fotograma queda con
         # duración 0 en el video final.
-        last_path = os.path.join(frames_dir, frame_files[-1]).replace("'", "'\\''")
+        last_path = os.path.abspath(os.path.join(frames_dir, frame_files[-1])).replace("'", "'\\''")
         handle.write(f"file '{last_path}'\n")
+
+
+async def assemble_timelapse_video(camera_id: str, filenames: Optional[List[str]] = None) -> str:
+    """Arma el video final a partir de los fotogramas capturados, al FPS
+    configurado. Usa el demuxer `concat` (lista explícita de archivos) en
+    vez de `-pattern_type glob`: glob depende de que el binario de ffmpeg
+    se haya compilado con soporte de glob, no todos los paquetes lo traen,
+    mientras que concat siempre funciona.
+
+    `filenames`: si se pasa, arma el video solo con esos fotogramas y en ese
+    orden (flujo "Juntar" desde una selección manual); si no, con todos los
+    capturados en orden cronológico (flujo "Armar timelapse" de siempre)."""
+    _require_ffmpeg()
+    frames_dir = _frames_dir(camera_id)
+    frame_files = _selected_frame_files(camera_id, frames_dir, filenames)
+    if len(frame_files) < 2:
+        raise RuntimeError("No hay suficientes fotogramas seleccionados todavía")
+
+    config = camera_service.get_timelapse_config(camera_id) or {}
+    fps = config.get("fps") or camera_service.DEFAULT_TIMELAPSE_CONFIG["fps"]
+
+    camera_dir = os.path.join(camera_service.CAPTURES_DIR, camera_id)
+    output_dir = _assembled_dir(camera_id)
+    output_path = os.path.join(output_dir, f"timelapse_{int(time.time())}.mp4")
+    concat_list_path = os.path.join(camera_dir, "_concat_list.txt")
+
+    frame_duration = 1.0 / fps
+    _write_concat_list(concat_list_path, frames_dir, frame_files, frame_duration)
 
     process = await asyncio.create_subprocess_exec(
         # Sin -vsync/-fps_mode: pedir "vfr" ahí y forzar -r al mismo tiempo
@@ -442,6 +480,45 @@ async def assemble_timelapse_video(camera_id: str) -> str:
         pass
     if process.returncode != 0:
         raise RuntimeError(f"No se pudo armar el video: {stderr.decode('utf-8', errors='ignore')[-300:].strip()}")
+    return output_path
+
+
+async def assemble_timelapse_gif(camera_id: str, filenames: Optional[List[str]] = None) -> str:
+    """Igual que assemble_timelapse_video pero exporta .gif -- mismo
+    concat list (compartido vía _write_concat_list), mismo ffmpeg ya
+    validado. Dos pasos (palettegen/paletteuse) para que el GIF no salga
+    con bandas de color feas, que es lo que pasa si se pide .gif directo
+    sin paleta."""
+    _require_ffmpeg()
+    frames_dir = _frames_dir(camera_id)
+    frame_files = _selected_frame_files(camera_id, frames_dir, filenames)
+    if len(frame_files) < 2:
+        raise RuntimeError("No hay suficientes fotogramas seleccionados todavía")
+
+    config = camera_service.get_timelapse_config(camera_id) or {}
+    fps = config.get("fps") or camera_service.DEFAULT_TIMELAPSE_CONFIG["fps"]
+
+    camera_dir = os.path.join(camera_service.CAPTURES_DIR, camera_id)
+    output_dir = _assembled_dir(camera_id)
+    output_path = os.path.join(output_dir, f"timelapse_{int(time.time())}.gif")
+    concat_list_path = os.path.join(camera_dir, "_concat_list_gif.txt")
+
+    frame_duration = 1.0 / fps
+    _write_concat_list(concat_list_path, frames_dir, frame_files, frame_duration)
+
+    process = await asyncio.create_subprocess_exec(
+        FFMPEG_BIN, "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path,
+        "-vf", f"fps={fps},scale=480:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse",
+        output_path,
+        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+    )
+    _stdout, stderr = await process.communicate()
+    try:
+        os.remove(concat_list_path)
+    except OSError:
+        pass
+    if process.returncode != 0:
+        raise RuntimeError(f"No se pudo armar el GIF: {stderr.decode('utf-8', errors='ignore')[-300:].strip()}")
     return output_path
 
 
@@ -511,3 +588,120 @@ def delete_recording(camera_id: str, filename: str) -> bool:
     except OSError as exc:
         logger.warning(f"No se pudo borrar la grabación {filename}: {exc}")
         return False
+
+
+# ── Videos/GIFs armados ──
+# assemble_timelapse_video/assemble_timelapse_gif guardaban el resultado en
+# camera_dir (la raíz de la cámara, mezclado con _concat_list.txt) y no
+# había ninguna forma de listarlos, reproducirlos ni borrarlos -- el archivo
+# quedaba huérfano en el disco con solo un toast como rastro. Mismo patrón
+# que list_recordings/get_recording_file_path/delete_recording de arriba.
+
+def list_assembled_videos(camera_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Videos/GIFs ya armados de una cámara, el más reciente primero."""
+    carpeta = _assembled_dir(camera_id)
+    try:
+        archivos = sorted(
+            (f for f in os.listdir(carpeta) if f.endswith((".mp4", ".gif"))),
+            reverse=True,
+        )
+    except OSError:
+        return []
+    if limit:
+        archivos = archivos[:limit]
+    resultado = []
+    for nombre in archivos:
+        ruta = os.path.join(carpeta, nombre)
+        try:
+            stat = os.stat(ruta)
+        except OSError:
+            continue
+        resultado.append({
+            "filename": nombre,
+            "timestamp": stat.st_mtime,
+            "size_bytes": stat.st_size,
+            "kind": "gif" if nombre.endswith(".gif") else "video",
+        })
+    return resultado
+
+
+def get_assembled_video_file_path(camera_id: str, filename: str) -> Optional[str]:
+    return _ruta_segura(camera_id, filename, _assembled_dir(camera_id))
+
+
+def delete_assembled_video(camera_id: str, filename: str) -> bool:
+    ruta = _ruta_segura(camera_id, filename, _assembled_dir(camera_id))
+    if ruta is None:
+        return False
+    try:
+        os.remove(ruta)
+        return True
+    except OSError as exc:
+        logger.warning(f"No se pudo borrar el video armado {filename}: {exc}")
+        return False
+
+
+# ── Edición liviana de una captura (rotar/recortar) ──
+# Pillow ya está importado arriba del archivo (se usa para motion
+# detection) -- no hace falta ninguna dependencia nueva. Sin filtros ni
+# retoque: solo lo que se puede hacer de verdad sin fabricar nada.
+
+_VALID_ROTATIONS = (0, 90, 180, 270)
+
+
+def edit_capture(
+    camera_id: str,
+    filename: str,
+    rotate: int = 0,
+    crop: Optional[Dict[str, int]] = None,
+    save_as_copy: bool = False,
+) -> Optional[str]:
+    """Aplica rotación (múltiplo de 90°) y/o recorte a una captura ya
+    guardada. Devuelve el filename final (el mismo si se sobrescribe, uno
+    nuevo si save_as_copy=True) o None si la captura no existe."""
+    ruta = _ruta_segura(camera_id, filename, _frames_dir(camera_id))
+    if ruta is None:
+        return None
+    if rotate not in _VALID_ROTATIONS:
+        raise ValueError(f"Rotación inválida: {rotate} (debe ser 0/90/180/270)")
+
+    image = Image.open(ruta)
+    image.load()
+    if rotate:
+        # PIL rota counter-clockwise -- se invierte el signo para que
+        # "rotar 90°" en la UI (sentido horario, lo intuitivo) coincida.
+        image = image.rotate(-rotate, expand=True)
+    if crop:
+        left, top = int(crop.get("left", 0)), int(crop.get("top", 0))
+        right, bottom = int(crop.get("right", image.width)), int(crop.get("bottom", image.height))
+        left, top = max(0, left), max(0, top)
+        right, bottom = min(image.width, right), min(image.height, bottom)
+        if right <= left or bottom <= top:
+            raise ValueError("Área de recorte inválida")
+        image = image.crop((left, top, right, bottom))
+
+    if save_as_copy:
+        base, _ext = os.path.splitext(filename)
+        out_filename = f"{base}_edit_{int(time.time())}.jpg"
+        out_path = os.path.join(_frames_dir(camera_id), out_filename)
+    else:
+        out_filename = filename
+        out_path = ruta
+
+    image.convert("RGB").save(out_path, format="JPEG", quality=92)
+    return out_filename
+
+
+# ── ZIP de capturas seleccionadas ──
+# No existía ningún exportador en lote en todo NOPAL -- se arma en memoria
+# con zipfile (stdlib), sin dependencias nuevas.
+
+def build_captures_zip(camera_id: str, filenames: List[str]) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for filename in filenames:
+            path = get_capture_file_path(camera_id, filename)
+            if path is None:
+                continue
+            archive.write(path, arcname=filename)
+    return buffer.getvalue()

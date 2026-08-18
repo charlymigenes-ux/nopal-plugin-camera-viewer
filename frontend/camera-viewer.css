@@ -14,16 +14,13 @@
        actual) que tapaba el wallpaper por completo en esta sección
        puntual -- ninguna otra sección lo hace. */
     color: var(--text);
-}
-
-.cv-scroll {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    padding: 24px 28px 40px;
+    overflow: hidden;
+    padding: 24px 28px 24px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
 }
 
 /* ── Encabezado ── */
@@ -71,55 +68,7 @@
 .cv-btn-accent { border-color: var(--cv-accent); background: rgba(var(--cv-accent-rgb), .16); color: var(--cv-accent); }
 .cv-btn-accent:hover { background: rgba(var(--cv-accent-rgb), .26); }
 
-/* ── Grid de cámaras ── */
-.cv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-.cv-grid-1x1 { grid-template-columns: 1fr; }
-.cv-grid-2x2 { grid-template-columns: repeat(2, 1fr); }
-.cv-grid-3x3 { grid-template-columns: repeat(3, 1fr); }
-.cv-empty { color: var(--text-muted); font-size: .85rem; padding: 8px 0; grid-column: 1 / -1; }
-
-.cv-card {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--cv-border);
-    border-radius: var(--radius-lg, 14px);
-    background: var(--cv-card);
-}
-.cv-stream-wrap {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    background: #0b0f16;
-    cursor: pointer;
-}
-.cv-stream {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-.cv-stream-status {
-    position: absolute;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    color: #94a3b8;
-    font-size: .8rem;
-    font-weight: 600;
-    background: rgba(11, 15, 22, .85);
-}
-.cv-card.is-offline .cv-stream { visibility: hidden; }
-.cv-card.is-offline .cv-stream-status { display: flex; }
-
-.cv-card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 10px 12px;
-}
-.cv-card-footer strong { font-size: .88rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-empty { color: var(--text-muted); font-size: .85rem; padding: 8px 0; }
 
 .cv-icon-btn {
     display: grid;
@@ -134,10 +83,299 @@
     flex-shrink: 0;
 }
 .cv-icon-btn.active { border-color: var(--cv-accent); background: rgba(var(--cv-accent-rgb), .16); color: var(--cv-accent); }
-
-.cv-layout-switch { display: flex; gap: 4px; }
 .cv-icon-btn:hover { border-color: rgba(var(--cv-accent-rgb), .5); color: var(--cv-accent); }
 .cv-icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
+
+/* ── Layout lista + inspector ── */
+.cv-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 16px; }
+
+/* Partido a la mitad: mosaico de cámaras arriba, timelapses guardados de la
+   cámara seleccionada abajo -- cada mitad con su propio scroll, así una
+   lista larga de cámaras no empuja la lista de videos fuera de vista. */
+.cv-list-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--cv-border);
+    border-radius: var(--radius-lg, 14px);
+    background: var(--cv-panel);
+    overflow: hidden;
+}
+.cv-list-panel-top, .cv-list-panel-bottom {
+    flex: 1 1 50%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    overflow: hidden;
+}
+.cv-list-panel-bottom { border-top: 1px solid var(--cv-border); }
+.cv-list-panel-title { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cv-list-panel-title strong { font-size: .95rem; color: var(--text); }
+.cv-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(var(--cv-accent-rgb), .14);
+    color: var(--cv-accent);
+    font-size: .68rem;
+    font-weight: 700;
+}
+.cv-status-pill.is-online { background: rgba(34, 197, 94, .14); color: #22c55e; }
+.cv-status-pill.is-offline { background: rgba(239, 68, 68, .14); color: #ef4444; }
+.cv-status-pill.is-disabled { background: rgba(148, 163, 184, .16); color: var(--text-muted); }
+.cv-status-pill.is-unknown { background: rgba(148, 163, 184, .1); color: var(--text-muted); }
+.cv-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.cv-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--cv-border);
+    border-radius: 999px;
+    background: var(--cv-control);
+    color: var(--text-muted);
+}
+.cv-search input { flex: 1; border: 0; background: transparent; color: var(--text); font-size: .82rem; outline: none; }
+.cv-filters-row { display: flex; gap: 8px; }
+.cv-filters-row select {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 8px;
+    border: 1px solid var(--cv-border);
+    border-radius: 8px;
+    background: var(--cv-control);
+    color: var(--text);
+    font-size: .76rem;
+}
+
+/* Modo mosaico: 2 columnas de tarjetas compactas en vez de filas finas --
+   ícono de tipo en vez de una miniatura en vivo (ver cameraTypeIconBody en
+   camera-viewer.js: una <img src="stream_url"> por tarjeta sería justo el
+   "poller por fila" que este panel evita en todo lo demás). */
+.cv-mosaic-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; align-content: start; }
+.cv-mosaic-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 12px 8px 10px;
+    border: 1px solid var(--cv-border);
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease;
+}
+.cv-mosaic-card:hover { background: var(--cv-control); }
+.cv-mosaic-card.selected { border-color: var(--cv-accent); background: rgba(var(--cv-accent-rgb), .1); }
+.cv-mosaic-card-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; background: var(--cv-control); color: var(--cv-accent); }
+.cv-mosaic-card-title { width: 100%; font-size: .8rem; font-weight: 650; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-mosaic-card-meta { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; font-size: .64rem; color: var(--text-muted); }
+.cv-mosaic-card-meta span { display: flex; align-items: center; gap: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-row-type { text-transform: uppercase; letter-spacing: .03em; font-weight: 700; color: var(--cv-accent); }
+.cv-mosaic-card-actions { display: flex; gap: 4px; margin-top: 2px; }
+.cv-row-btn {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--cv-border);
+    border-radius: 7px;
+    background: var(--cv-control);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.cv-row-btn:hover { border-color: rgba(var(--cv-accent-rgb), .5); color: var(--cv-accent); }
+.cv-row-btn-danger:hover { border-color: #ef4444; color: #ef4444; }
+
+/* Timelapses guardados (mitad inferior) */
+.cv-saved-timelapses { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.cv-saved-tl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--cv-border);
+    border-radius: 10px;
+}
+.cv-saved-tl-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cv-saved-tl-main strong { font-size: .78rem; color: var(--text); }
+.cv-saved-tl-main span { font-size: .66rem; color: var(--text-muted); }
+.cv-saved-tl-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.cv-saved-tl-actions a.cv-row-btn { text-decoration: none; }
+
+.cv-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 30px 16px;
+    color: var(--text-muted);
+    text-align: center;
+}
+.cv-empty-state svg { color: var(--cv-accent); opacity: .6; }
+.cv-empty-state p { margin: 0; font-size: .84rem; }
+
+/* ── Inspector ── */
+.cv-inspector-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--cv-border);
+    border-radius: var(--radius-lg, 14px);
+    background: var(--cv-panel);
+    overflow: hidden;
+}
+.cv-inspector-panel.is-empty { align-items: stretch; }
+/* Sin header propio (nombre/ID/estado) arriba -- las pestañas son lo
+   primero del panel, más grandes ("modelo 2026") para que noten que son la
+   navegación principal del inspector, no un detalle chico. */
+.cv-inspector-tabs { display: flex; align-items: center; gap: 4px; padding: 12px 18px 0; border-bottom: 1px solid var(--cv-border); }
+.cv-inspector-back {
+    display: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 4px;
+    border: 1px solid var(--cv-border);
+    border-radius: 8px;
+    background: var(--cv-control);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.cv-inspector-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 16px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: .92rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.cv-inspector-tab:hover { color: var(--text); }
+.cv-inspector-tab.active { color: var(--cv-accent); border-bottom-color: var(--cv-accent); }
+.cv-inspector-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Pestaña General: 2 columnas (vista/solo-lectura a la izquierda, editar a
+   la derecha) -- antes eran 2 pestañas separadas que repetían los mismos
+   datos; en 1 columna en el breakpoint móvil ya existente. */
+.cv-general-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.cv-general-col-view, .cv-general-col-edit { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.cv-info-preview { border-radius: var(--radius-lg, 12px); overflow: hidden; border: 1px solid var(--cv-border); }
+.cv-inspector-section { padding: 14px 16px; border: 1px solid var(--cv-border); border-radius: var(--radius-md, 10px); }
+.cv-inspector-section h3 { margin: 0 0 10px; font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+.cv-dl { display: flex; flex-direction: column; gap: 7px; margin: 0; }
+.cv-dl > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cv-dl dt { margin: 0; font-size: .74rem; color: var(--text-muted); }
+.cv-dl dd { margin: 0; font-size: .78rem; color: var(--text); font-weight: 600; text-align: right; }
+.cv-dl-mono { font-family: ui-monospace, monospace; font-size: .7rem !important; }
+
+.cv-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cv-stat-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px; border-radius: 10px; background: var(--cv-control); text-align: center; }
+.cv-stat-tile strong { font-size: 1.05rem; color: var(--text); }
+.cv-stat-tile span { font-size: .66rem; color: var(--text-muted); }
+
+.cv-active-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cv-active-toggle strong { display: block; font-size: .82rem; color: var(--text); }
+.cv-active-toggle small { color: var(--text-muted); font-size: .72rem; }
+.cv-switch { position: relative; display: inline-block; width: 38px; height: 21px; flex-shrink: 0; }
+.cv-switch input { opacity: 0; width: 0; height: 0; }
+.cv-switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--cv-border); transition: background .15s ease; }
+.cv-switch span::before { content: ''; position: absolute; width: 15px; height: 15px; left: 3px; top: 3px; border-radius: 50%; background: var(--card-bg); transition: transform .15s ease; }
+.cv-switch input:checked + span { background: var(--cv-accent); }
+.cv-switch input:checked + span::before { transform: translateX(17px); }
+
+.cv-config-test-row { display: flex; }
+.cv-timelapse-embed-mount { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.cv-timelapse-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--cv-border);
+    border-radius: var(--radius-md, 10px);
+    flex-shrink: 0;
+}
+.cv-timelapse-status-hint { flex: 1; min-width: 0; font-size: .76rem; color: var(--text-muted); }
+.cv-timelapse-status-bar .cv-btn { flex-shrink: 0; }
+
+/* ── Overlay / modal ── */
+.cv-panel-overlay { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; }
+.cv-panel-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .5); }
+.cv-panel-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(420px, 92vw);
+    max-height: 86vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 20px 20px;
+    border: 1px solid rgba(var(--cv-accent-rgb), .4);
+    border-radius: var(--radius-lg, 14px);
+    background: var(--card-bg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+}
+.cv-delete-dialog { width: min(460px, 92vw); }
+.cv-delete-actions { justify-content: flex-start; flex-wrap: wrap; }
+.cv-panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.cv-panel-header strong { display: block; color: var(--text); font-size: 1rem; }
+.cv-panel-header small { color: var(--text-muted); font-size: .78rem; }
+.cv-panel-header button { border: none; background: none; color: var(--text-muted); cursor: pointer; display: grid; place-items: center; }
+
+.cv-add-tabs { display: flex; gap: 6px; margin-bottom: 2px; }
+.cv-add-tab {
+    padding: 7px 14px;
+    border: 1px solid var(--cv-border);
+    border-radius: 999px;
+    background: var(--cv-control);
+    color: var(--text-secondary);
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.cv-add-tab.active { border-color: var(--cv-accent); background: rgba(var(--cv-accent-rgb), .16); color: var(--cv-accent); }
+
+.cv-add-form { display: flex; flex-direction: column; gap: 12px; }
+.cv-onvif-or { margin: -4px 0 0; font-size: .74rem; color: var(--text-muted); text-align: center; }
+.cv-panel-dialog label { display: flex; flex-direction: column; gap: 5px; font-size: .8rem; color: var(--text-muted); }
+.cv-panel-dialog input {
+    padding: 8px 10px;
+    border: 1px solid var(--cv-border);
+    border-radius: 8px;
+    background: var(--cv-control);
+    color: var(--text);
+    font-size: .85rem;
+}
+.cv-panel-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.cv-panel-actions button {
+    padding: 8px 16px;
+    border: 1px solid var(--cv-border);
+    border-radius: 8px;
+    background: var(--cv-control);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: .82rem;
+    cursor: pointer;
+}
+.cv-panel-actions button[type="submit"] {
+    border-color: var(--cv-accent);
+    background: rgba(var(--cv-accent-rgb), .18);
+    color: var(--cv-accent);
+}
 
 /* ── Overlay / modal ── */
 .cv-panel-overlay { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; }
@@ -203,30 +441,23 @@
     color: var(--cv-accent);
 }
 
-/* ── Vista ampliada (click en una cámara) ── */
-.cv-lightbox-dialog {
-    position: relative;
-    z-index: 1;
-    width: min(90vw, 1100px);
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    border: 1px solid rgba(var(--cv-accent-rgb), .4);
-    border-radius: var(--radius-lg, 14px);
-    background: var(--card-bg);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
-}
-.cv-lightbox-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.cv-lightbox-header strong { color: var(--text); font-size: 1rem; }
-.cv-lightbox-header button { border: none; background: none; color: var(--text-muted); cursor: pointer; display: grid; place-items: center; }
-.cv-lightbox-img {
-    width: 100%;
-    max-height: calc(90vh - 60px);
-    object-fit: contain;
-    border-radius: 10px;
-    background: #0b0f16;
+/* ── Responsive: por debajo de este ancho, el inspector pasa a un drawer
+   superpuesto (mismo backdrop que ya usan los overlays de alta/edición) en
+   vez de columna fija -- la cámara seleccionada sigue evidente porque el
+   drawer se abre siempre que hay una selección. ── */
+@media (max-width: 980px) {
+    .cv-layout { grid-template-columns: 1fr; }
+    .cv-inspector-panel {
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        border-radius: 0;
+        transform: translateX(100%);
+        transition: transform .2s ease;
+    }
+    .cv-inspector-panel:not(.is-empty) { transform: translateX(0); }
+    .cv-inspector-back { display: grid; }
+    .cv-general-columns { grid-template-columns: 1fr; }
 }
 
 /* ── Pestaña "USB" del panel de alta (detectar → propósito → confirmar) ── */
@@ -696,6 +927,28 @@
 }
 .cam-card.is-offline .cam-live-badge { display: none; }
 
+/* REC (grabando ahora) + fotogramas del timelapse -- visibles siempre, no
+   solo en el ícono del botón, para que se note sin leer un botón chico
+   (ver refreshStats() en camera-card.js, que las muestra/oculta según
+   stats.recording/stats.enabled). */
+.cam-badges-topleft { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.cam-rec-badge, .cam-frames-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+.cam-rec-badge { background: rgba(239, 68, 68, .9); }
+.cam-rec-badge svg { width: 9px; height: 9px; fill: currentColor; }
+.cam-frames-badge { background: rgba(0, 0, 0, .55); }
+.cam-frames-badge svg { width: 11px; height: 11px; }
+.cam-card.is-offline .cam-badges-topleft { display: none; }
+
 .cam-captures-section { display: flex; flex-direction: column; gap: 6px; }
 .cam-captures-header {
     display: flex;
@@ -720,30 +973,116 @@
 .cam-card-compact { padding: 0; border: none; background: transparent; }
 .cam-card-compact .cam-live-wrap { aspect-ratio: 4 / 3; border-radius: var(--radius-sm, 6px); }
 
-.cam-gallery-overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; }
+/* ── Gestor de capturas/timelapse (modal "Armar timelapse") ──
+   Evoluciona del modal original (una cuadrícula simple) a un espacio de
+   trabajo real: header, barra de acciones, visor+transporte, panel lateral
+   de detalles/exportación, y una tira de miniaturas con selección múltiple
+   -- todo dentro del mismo overlay/backdrop de siempre, solo más grande. */
+.cam-gallery-overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .cam-gallery-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .6); }
+/* Variante embebida: mismo gestor, inline dentro del tab Timelapse del
+   inspector (camera-viewer.js) en vez de modal flotante -- llena el alto
+   disponible de #cv-inspector-body en vez de position:fixed. */
+.cam-gallery-embed { flex: 1; min-height: 560px; display: flex; flex-direction: column; }
+.cam-gallery-embed .cam-gallery-dialog { position: static; width: 100%; height: 100%; padding: 0; border: none; background: transparent; border-radius: 0; }
 .cam-gallery-dialog {
     position: relative;
-    width: min(90vw, 900px);
-    max-height: 85vh;
+    width: min(96vw, 1400px);
+    height: min(92vh, 900px);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 18px;
+    gap: 10px;
+    padding: 16px 18px;
     border-radius: var(--radius-lg, 14px);
     background: var(--card-bg);
     border: 1px solid var(--border);
     overflow: hidden;
 }
-.cam-gallery-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.cam-gallery-header-actions { display: flex; align-items: center; gap: 8px; }
-.cam-gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
-    overflow-y: auto;
+.cam-gallery-header { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.cam-gallery-header-title { display: flex; align-items: center; gap: 8px; color: var(--accent); }
+.cam-gallery-header-title strong { color: var(--text); font-size: .92rem; font-weight: 650; }
+.cam-gallery-search {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    max-width: 320px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
 }
-.cam-gallery-thumb { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; display: block; }
+.cam-gallery-search input { flex: 1; border: 0; background: transparent; color: var(--text); font-size: .78rem; outline: none; }
+
+.cam-gallery-toolbar { display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
+.cam-gallery-toolbar .cam-btn { flex: 0 0 auto; }
+
+.cam-gallery-body { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 12px; flex: 1; min-height: 0; }
+.cam-gallery-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
+.cam-gallery-viewer { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-lg, 12px); background: #05070b; overflow: hidden; }
+.cam-gallery-viewer-stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; overflow: hidden; }
+.cam-gallery-viewer-media { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 120ms ease; }
+video.cam-gallery-viewer-media { width: 100%; height: 100%; }
+.cam-gallery-viewer-overlays { position: absolute; inset: 10px 10px auto 10px; display: flex; gap: 6px; pointer-events: none; }
+.cam-gallery-viewer-overlays:has(.cam-gallery-viewer-count) { inset: auto 10px 10px 10px; justify-content: flex-end; }
+.cam-gallery-viewer-chip { padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, .55); color: #fff; font-size: .66rem; }
+.cam-empty { padding: 24px; font-size: .8rem; color: var(--text-muted); margin: 0; text-align: center; }
+
+.cam-gallery-transport { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+.cam-gallery-transport-buttons { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cam-icon-btn-accent { border-color: var(--accent); color: var(--accent); }
+.cam-gallery-speed, .cam-gallery-loop { display: flex; align-items: center; gap: 5px; font-size: .68rem; color: var(--text-muted); margin-left: 6px; }
+.cam-gallery-speed select { border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text); font-size: .68rem; padding: 2px 4px; }
+.cam-gallery-timeline { display: flex; flex-direction: column; gap: 4px; }
+.cam-gallery-timeline input[type="range"] { width: 100%; }
+.cam-gallery-timeline span { font-size: .66rem; color: var(--text-muted); }
+
+.cam-gallery-sidebar { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 2px; }
+.cam-gallery-sidebar-section { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md, 10px); }
+.cam-gallery-sidebar-section h3 { margin: 0 0 8px; font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+.cam-gallery-sidebar-section dl { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.cam-gallery-sidebar-section dl > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cam-gallery-sidebar-section dt { margin: 0; font-size: .72rem; color: var(--text-muted); }
+.cam-gallery-sidebar-section dd { margin: 0; font-size: .76rem; color: var(--text); font-weight: 600; text-align: right; }
+.cam-gallery-sidebar-hint { margin: 0 0 10px; font-size: .68rem; color: var(--text-muted); }
+.cam-gallery-export-options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.cam-gallery-export-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 8px);
+    cursor: pointer;
+}
+.cam-gallery-export-option strong { grid-row: 1; font-size: .78rem; color: var(--text); }
+.cam-gallery-export-option small { grid-row: 2; grid-column: 2; font-size: .64rem; color: var(--text-muted); }
+.cam-gallery-export-option input { grid-row: 1 / 3; }
+.cam-gallery-export-option.active { border-color: var(--accent); background: rgba(var(--accent-rgb), .1); }
+.cam-btn-block { width: 100%; }
+
+.cam-gallery-filmbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; font-size: .72rem; color: var(--text-muted); }
+.cam-gallery-filmbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cam-link-btn { border: 0; background: transparent; color: var(--accent); font-size: .72rem; cursor: pointer; padding: 0; }
+.cam-link-btn:disabled { color: var(--text-muted); cursor: not-allowed; }
+.cam-gallery-mini-select { display: flex; align-items: center; gap: 5px; }
+.cam-gallery-mini-select select { border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text); font-size: .7rem; padding: 2px 4px; }
+
+.cam-gallery-filmstrip { flex-shrink: 0; max-height: 168px; overflow-y: auto; overflow-x: hidden; }
+.cam-gallery-filmstrip-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.cam-gallery-day-marker { grid-column: 1 / -1; font-size: .66rem; color: var(--text-muted); padding: 4px 2px 0; }
+.cam-gallery-thumb {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+    overflow: hidden;
+    display: block;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+.cam-gallery-thumb.active { border-color: var(--accent); }
+.cam-gallery-thumb.selected { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .5) inset; }
 .cam-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cam-gallery-thumb span {
     position: absolute;
@@ -756,6 +1095,48 @@
     font-size: .64rem;
     text-align: center;
 }
+.cam-gallery-thumb-check { position: absolute; top: 5px; left: 5px; z-index: 2; }
+.cam-gallery-thumb-check input { accent-color: var(--accent); }
+.cam-gallery-thumb-current { position: absolute; top: 5px; right: 5px; z-index: 2; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #04120b; }
+
+.cam-gallery-videos-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.cam-gallery-videos-label { font-size: .68rem; color: var(--text-muted); }
+.cam-gallery-video-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: .7rem;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.cam-gallery-video-chip.active { border-color: var(--accent); color: var(--accent); }
+.cam-gallery-video-chip-actions { display: flex; align-items: center; gap: 4px; margin-left: 4px; }
+.cam-gallery-video-chip-actions a, .cam-gallery-video-chip-actions button { display: grid; place-items: center; border: 0; background: transparent; color: inherit; cursor: pointer; }
+
+/* Editar (rotar/recortar) */
+.cam-gallery-edit-toolbar { display: flex; gap: 8px; padding: 8px; flex-shrink: 0; }
+.cam-gallery-edit-stage { position: relative; cursor: crosshair; }
+.cam-gallery-crop-box { position: absolute; border: 2px dashed var(--accent); background: rgba(var(--accent-rgb), .12); }
+.cam-gallery-edit-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 10px; flex-shrink: 0; }
+
+/* Juntar (armar desde selección + orden manual) */
+.cam-gallery-merge-panel { display: flex; flex-direction: column; height: 100%; padding: 10px; overflow: hidden; }
+.cam-gallery-merge-hint { margin: 0 0 10px; font-size: .74rem; color: var(--text-muted); }
+.cam-gallery-merge-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.cam-gallery-merge-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; }
+.cam-gallery-merge-row img { width: 42px; height: 32px; object-fit: cover; border-radius: 4px; }
+.cam-gallery-merge-row span { flex: 1; min-width: 0; font-size: .72rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cam-gallery-merge-row-actions { display: flex; gap: 2px; }
+.cam-gallery-merge-row-actions button { display: grid; place-items: center; width: 24px; height: 24px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; }
+.cam-gallery-merge-row-actions button:disabled { opacity: .3; cursor: not-allowed; }
+
+@media (max-width: 900px) {
+    .cam-gallery-body { grid-template-columns: 1fr; }
+    .cam-gallery-sidebar { max-height: 220px; }
+}
 
 @media (max-width: 480px) {
     .cam-stat-grid { grid-template-columns: repeat(3, 1fr); }
@@ -766,16 +1147,23 @@
    antes ese recuadro no decía nada y el motivo quedaba solo en el log del
    servidor, así que no había forma de saber si era el cable, el permiso o
    que otro programa tenía tomada la cámara. */
+/* Centrado en el cuadro, no anclado abajo -- ahí mismo vive la barra de
+   controles (position:absolute, también abajo), y las dos se pisaban: el
+   texto del error quedaba encima de CAPTURAR/GRABAR/AMPLIAR en vez de
+   dejarlos ver. */
 .cam-live-error {
     position: absolute;
-    inset: auto 8px 8px 8px;
-    padding: 7px 9px;
-    border-radius: var(--radius-sm, 6px);
-    background: rgba(0, 0, 0, .72);
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, .55);
     color: #fff;
-    font-size: .72rem;
-    line-height: 1.35;
+    font-size: .74rem;
+    line-height: 1.4;
     text-align: center;
+    pointer-events: none;
 }
 
 /* Controles de la cámara, dentro del video.

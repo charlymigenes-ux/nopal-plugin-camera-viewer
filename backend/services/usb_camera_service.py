@@ -260,6 +260,12 @@ _MOTIVOS = (
      "La cámara ya no está conectada."),
     ("Connection refused",
      "No responde la dirección de la que se lee esta cámara."),
+    ("Error opening input files",
+     "Esta cámara no entrega un formato de video que ffmpeg pueda leer "
+     "(pasa con algunos modelos económicos que solo hablan un formato "
+     "propietario del driver, ej. 'GSPCA PJPG', y no MJPEG/YUYV estándar). "
+     "No es un problema de configuración: ese modelo de cámara no es "
+     "compatible con la captura por USB de NOPAL."),
 )
 
 
